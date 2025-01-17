@@ -16,25 +16,13 @@ export const POST = async (
   res.json({ brand: result });
 };
 
+export const GET = async (req: MedusaRequest, res: MedusaResponse) => {
+  const query = req.scope.resolve("query");
 
-export const GET = async (
-  req: MedusaRequest,
-  res: MedusaResponse
-) => {
-  const query = req.scope.resolve("query")
-  
-  const { 
-    data: brands, 
-    metadata: { count, take, skip },
-  } = await query.graph({
+  const { data: brands } = await query.graph({
     entity: "brand",
-    ...req.queryConfig,
-  })
+    fields: ["*", "products.*"],
+  });
 
-  res.json({ 
-    brands,
-    count,
-    limit: take,
-    offset: skip,
-  })
+  res.json({ brands });
 };
