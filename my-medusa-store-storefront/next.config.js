@@ -22,7 +22,7 @@ const nextConfig = {
     remotePatterns: [
       {
         protocol: "https",
-        hostname: "xvdfhmxepufsqsmhnmpa.supabase.co/storage/v1/object/public/viki%20file%20storage",
+        hostname: "xvdfhmxepufsqsmhnmpa.supabase.co",
       },
       {
         protocol: "https",
