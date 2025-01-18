@@ -2,9 +2,8 @@ const checkEnvVariables = require("./check-env-variables")
 
 checkEnvVariables()
 
-
-/** 
- * @type {import('next').NextConfig} 
+/**
+ * @type {import('next').NextConfig}
  */
 const nextConfig = {
   reactStrictMode: true,
@@ -24,6 +23,7 @@ const nextConfig = {
       {
         protocol: "https",
         hostname: "xvdfhmxepufsqsmhnmpa.supabase.co",
+        pathname: "/storage/v1/object/public/**"
       },
       {
         protocol: "https",
