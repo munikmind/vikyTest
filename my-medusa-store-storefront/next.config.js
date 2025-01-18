@@ -3,7 +3,7 @@ const checkEnvVariables = require("./check-env-variables")
 checkEnvVariables()
 
 
-/**
+/** 
  * @type {import('next').NextConfig} 
  */
 const nextConfig = {
