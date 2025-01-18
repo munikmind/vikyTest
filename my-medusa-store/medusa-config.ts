@@ -55,6 +55,8 @@ module.exports = defineConfig({
               region: process.env.S3_REGION,
               bucket: process.env.S3_BUCKET,
               endpoint: process.env.S3_ENDPOINT,
+              cache_control: "public, max-age=31536000",
+              download_file_duration: 3600,
               additional_client_config: {
                 forcePathStyle: true,
               },
