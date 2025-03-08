@@ -50,10 +50,10 @@ const HeroSection = () => {
                             width={15}
                             height={15}
                             className="object-cover w-full h-full rounded-full p-1"
-                            />
+                          />
                         </Link>
                       </div>
-                      </CardContent>
+                    </CardContent>
                   </Card>
                 </div>
               </CarouselItem>
