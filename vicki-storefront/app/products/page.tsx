@@ -8,6 +8,7 @@ import { HttpTypes } from "@medusajs/types"
 import Link from 'next/link'
 import Image from 'next/image'
 
+
 export default function ProductsPage() {
   const { regionId } = useRegion()
   const [products, setProducts] = useState<HttpTypes.StoreProduct[]>([])
