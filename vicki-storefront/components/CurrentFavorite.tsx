@@ -1,7 +1,10 @@
 "use client";
+import { HttpTypes } from "@medusajs/types"
 import { Poppins } from "next/font/google";
 import Image from "next/image";
 import Link from "next/link";
+import { useEffect, useState } from "react";
+import { getProductsByCollection } from "../lib/products";
 
 const poppins = Poppins({
   subsets: ["latin"],
@@ -10,37 +13,42 @@ const poppins = Poppins({
 });
 
 const CurrentFavorite = () => {
-  // Données des produits favoris
-  const favoriteProducts = [
-    {
-      id: 1,
-      name: "Belle Tenue Africaine",
-      image: "/modeleVetement4.jpg",
-      category: "vetements",
-      link: "/products/belle-tenue-africaine",
-    },
-    {
-      id: 2,
-      name: "Extension",
-      image: "/ext1.jpeg",
-      category: "cheveux",
-      link: "/products/extension",
-    },
-    {
-      id: 3,
-      name: "Sister Locks",
-      image: "/Sisterlocks.jpeg",
-      category: "coiffure",
-      link: "/products/sister-locks",
-    },
-    {
-      id: 4,
-      name: "Tresse",
-      image: "/coiffureTresse.jpeg",
-      category: "coiffure",
-      link: "/products/tresse",
-    },
-  ];
+  const [favoriteProducts, setFavoriteProducts] = useState<
+    HttpTypes.StoreProduct[]
+  >([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchProducts = async () => {
+      try {
+        // Récupération des produits de la collection "Coup de Coeur"
+        const products = await getProductsByCollection(
+          "pcol_01JNRND7C841843MHSEPGWYKKP"
+        );
+        setFavoriteProducts(products);
+      } catch (error) {
+        console.error("Erreur lors de la récupération des produits:", error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchProducts();
+  }, []);
+
+  if (isLoading) {
+    return (
+      <div className="container mx-auto py-10">Chargement des produits...</div>
+    );
+  }
+
+  if (favoriteProducts.length === 0) {
+    return (
+      <div className="container mx-auto py-10">
+        Aucun produit trouvé dans cette collection.
+      </div>
+    );
+  }
 
   return (
     <div className="w-full">
@@ -58,59 +66,53 @@ const CurrentFavorite = () => {
         {/* Galerie de produits - Layout spécial avec première carte plus grande */}
         <div className="flex flex-col md:flex-row md:items-end gap-6">
           {/* Première carte (plus grande) */}
-          <div className="md:w-1/3 mb-6 md:mb-0">
-            <div className="relative rounded-xl overflow-hidden h-[500px] md:h-[600px]">
-              <Image
-                src={favoriteProducts[0].image}
-                alt={favoriteProducts[0].name}
-                fill
-                className="object-cover"
-                priority
-              />
+          {favoriteProducts.length > 0 && (
+            <div className="md:w-1/3 mb-6 md:mb-0">
+              <div className="relative rounded-xl overflow-hidden h-[500px] md:h-[600px]">
+                <Image
+                  src={favoriteProducts[0].images?.[0]?.url || "/placeholder.jpg"}
+                  alt={favoriteProducts[0].title}
+                  fill
+                  className="object-cover"
+                  priority
+                />
 
-              {/* Overlay avec nom du produit */}
-              <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/60 to-transparent pt-20 pb-6 px-6">
-                <h3 className="text-white text-2xl font-semibold">
-                  {favoriteProducts[0].name}
-                </h3>
-              </div>
+                {/* Overlay avec nom du produit */}
+                <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/60 to-transparent pt-20 pb-6 px-6">
+                  <h3 className="text-white text-2xl font-semibold">
+                    {favoriteProducts[0].title}
+                  </h3>
+                </div>
 
-              {/* Bouton d'action */}
-              <div className="absolute bottom-6 right-6">
-                <Link href={favoriteProducts[0].link}>
-                  <button className="bg-white rounded-full p-2 hover:bg-gray-100 transition-colors">
-                    <Image
-                      src={
-                        favoriteProducts[0].category === "vetements"
-                          ? "/shopping-cart 2.svg"
-                          : "/eye-password.svg"
-                      }
-                      alt={
-                        favoriteProducts[0].category === "vetements"
-                          ? "Ajouter au panier"
-                          : "Voir le produit"
-                      }
-                      width={24}
-                      height={24}
-                    />
-                  </button>
-                </Link>
+                {/* Bouton d'action */}
+                <div className="absolute bottom-6 right-6">
+                  <Link href={`/products/${favoriteProducts[0].handle}`}>
+                    <button className="bg-white rounded-full p-2 hover:bg-gray-100 transition-colors">
+                      <Image
+                        src="/shopping-cart 2.svg"
+                        alt="Ajouter au panier"
+                        width={24}
+                        height={24}
+                      />
+                    </button>
+                  </Link>
+                </div>
               </div>
             </div>
-          </div>
+          )}
 
           {/* Autres cartes (plus petites, en grille) */}
           <div className="md:w-2/3">
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 h-full">
-              {favoriteProducts.slice(1).map((product, index) => (
+              {favoriteProducts.slice(1, 4).map((product) => (
                 <div
                   key={product.id}
                   className="relative rounded-xl overflow-hidden h-[300px] md:h-[290px]"
                 >
                   {/* Image du produit */}
                   <Image
-                    src={product.image}
-                    alt={product.name}
+                    src={product.images?.[0]?.url || "/placeholder.jpg"}
+                    alt={product.title}
                     fill
                     className="object-cover"
                   />
@@ -118,35 +120,22 @@ const CurrentFavorite = () => {
                   {/* Overlay avec nom du produit */}
                   <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/60 to-transparent pt-12 pb-4 px-4">
                     <h3 className="text-white text-xl font-semibold">
-                      {product.name}
+                      {product.title}
                     </h3>
                   </div>
 
                   {/* Boutons d'action */}
                   <div className="absolute bottom-4 right-4">
-                    {product.category === "vetements" ? (
-                      <Link href={product.link}>
-                        <button className="bg-white rounded-full p-2 hover:bg-gray-100 transition-colors">
-                          <Image
-                            src="/shopping-cart 2.svg"
-                            alt="Ajouter au panier"
-                            width={24}
-                            height={24}
-                          />
-                        </button>
-                      </Link>
-                    ) : (
-                      <Link href={product.link}>
-                        <button className="bg-white rounded-full p-2 hover:bg-gray-100 transition-colors">
-                          <Image
-                            src="/eye-password.svg"
-                            alt="Voir le produit"
-                            width={24}
-                            height={24}
-                          />
-                        </button>
-                      </Link>
-                    )}
+                    <Link href={`/products/${product.handle}`}>
+                      <button className="bg-white rounded-full p-2 hover:bg-gray-100 transition-colors">
+                        <Image
+                          src="/shopping-cart 2.svg"
+                          alt="Ajouter au panier"
+                          width={24}
+                          height={24}
+                        />
+                      </button>
+                    </Link>
                   </div>
                 </div>
               ))}

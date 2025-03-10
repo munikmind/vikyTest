@@ -1,6 +1,6 @@
 import Medusa from "@medusajs/js-sdk"
 
-let MEDUSA_BACKEND_URL = "https://vikytest.up.railway.app/"
+let MEDUSA_BACKEND_URL = "https://vikytest-production.up.railway.app/"
 
 if (process.env.NEXT_PUBLIC_MEDUSA_BACKEND_URL) {
   MEDUSA_BACKEND_URL = process.env.NEXT_PUBLIC_MEDUSA_BACKEND_URL
