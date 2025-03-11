@@ -8,6 +8,7 @@ const poppins = Poppins({
   variable: "--font-poppins",
 });
 
+
 const AboutUs = () => {
   return (
     <div className="w-full bg-gray-100 py-16 px-4">
