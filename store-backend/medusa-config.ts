@@ -33,9 +33,6 @@ module.exports = defineConfig({
       },
     },
     {
-      resolve: "./src/modules/brand",
-    },
-    {
       resolve: "@medusajs/medusa/cache-redis",
       options: {
         redisUrl: process.env.REDIS_URL,
