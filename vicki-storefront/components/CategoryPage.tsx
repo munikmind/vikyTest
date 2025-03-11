@@ -29,6 +29,7 @@ export default function CategoryPage({
   const [activeFilters, setActiveFilters] = useState<Filter[]>([]);
   const [showFilterModal, setShowFilterModal] = useState(false);
   const [isCartOpen, setIsCartOpen] = useState(false);
+
   useEffect(() => {
     async function loadProducts() {
       try {
@@ -48,6 +49,10 @@ export default function CategoryPage({
   const getProductPrice = (product: HttpTypes.StoreProduct): number => {
     const variant = product.variants?.[0];
     return variant?.calculated_price?.calculated_amount || 0;
+  };
+
+  const getProductVariantId = (product: HttpTypes.StoreProduct): string => {
+    return product.variants?.[0]?.id || "";
   };
 
   const removeFilter = (filterToRemove: Filter) => {
@@ -155,6 +160,8 @@ export default function CategoryPage({
             <div key={product.handle} className="flex flex-col gap-3">
               <ProductCard
                 handle={product.handle}
+                productId={product.id}
+                variantId={getProductVariantId(product)}
                 imageSrc={
                   product.images?.[0]?.url ||
                   product.thumbnail ||
@@ -164,12 +171,6 @@ export default function CategoryPage({
                 price={getProductPrice(product)}
                 onOpenCart={() => setIsCartOpen(true)}
               />
-              {/* <div className="flex flex-col">
-                <h3 className="text-lg font-normal">{product.title}</h3>
-                <span className="text-base text-gray-600">
-                  {getProductPrice(product)} FCFA
-                </span>
-              </div> */}
             </div>
           ))}
         </div>

@@ -1,28 +1,19 @@
 "use client";
-import { Search } from "lucide-react";
+import { useCart } from "@/context/CartContext";
+import { Search, ShoppingBag } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import ShopCard from "./ShopCard";
 
 export default function Navbar() {
   const [isShopCardOpen, setIsShopCardOpen] = useState(false);
-  const [cartItemsCount, setCartItemsCount] = useState(0);
-
-  useEffect(() => {
-    const updateCartCount = () => {
-      const items = JSON.parse(localStorage.getItem("cart_items") || "[]");
-      setCartItemsCount(items.length);
-    };
-
-    updateCartCount();
-    window.addEventListener("cartUpdated", updateCartCount);
-    return () => window.removeEventListener("cartUpdated", updateCartCount);
-  }, []);
+  const { itemsCount } = useCart();
 
   const toggleShopCard = () => {
     setIsShopCardOpen(!isShopCardOpen);
   };
+
   return (
     <nav className="flex items-center justify-around bg-transparent p-4 w-full gap-32 px-4 md:px-8 lg:px-36">
       {/* Logo & Search */}
@@ -65,23 +56,14 @@ export default function Navbar() {
         {/* Cart */}
         <div className="flex items-center gap-4">
           {/* Shop Button */}
-          <button
-            className="relative flex items-center gap-2"
-            onClick={toggleShopCard}
-          >
-            <Image
-              src="/shopping-bag-2.svg"
-              alt="Profile"
-              width={50}
-              height={50}
-              className="size-7 rounded-full"
-            />
+          <Link href="/cart" className="relative flex items-center gap-2">
+            <ShoppingBag className="w-7 h-7" />
             <div className="bg-[#D12E87] rounded-full size-6 flex items-center justify-center">
               <p className="text-white font-bold text-sm text-center">
-                {cartItemsCount}
+                {itemsCount}
               </p>
             </div>
-          </button>
+          </Link>
 
           {/* Seperator */}
           <div className="h-12 bg-gray-200 w-[2px] rounded-xl"></div>

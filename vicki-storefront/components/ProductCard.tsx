@@ -17,6 +17,8 @@ interface ProductCardProps {
   productName: string;
   price: number;
   handle: string;
+  productId: string;
+  variantId: string;
   onOpenCart?: () => void;
 }
 
@@ -25,12 +27,15 @@ export const ProductCard = ({
   productName,
   price,
   handle,
+  productId,
+  variantId,
   onOpenCart,
 }: ProductCardProps) => {
   const [showAddToCart, setShowAddToCart] = useState(false);
 
   const product = {
-    id: handle,
+    id: productId,
+    variantId: variantId,
     title: productName,
     thumbnail: imageSrc,
     price: price,
@@ -72,7 +77,7 @@ export const ProductCard = ({
             {productName}
           </h3>
           <p className={`${poppins.className} text-base font-normal`}>
-            {price.toLocaleString()} FCFA
+            {(price / 100).toFixed(2)} €
           </p>
         </Link>
       </div>

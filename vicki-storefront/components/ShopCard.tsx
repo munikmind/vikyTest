@@ -3,18 +3,12 @@
 // import { useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent } from "@/components/ui/sheet";
-import { Minus, Plus, ShoppingBag, Trash2 } from "lucide-react";
+import { useCart } from "@/context/CartContext";
+import { Loader2, Minus, Plus, ShoppingBag, Trash2 } from "lucide-react";
 import Image from "next/image";
-import { useEffect, useState } from "react";
+import Link from "next/link";
+import { useState } from "react";
 import { toast } from "sonner";
-
-interface CartItem {
-  id: string;
-  title: string;
-  thumbnail: string;
-  unit_price: number;
-  quantity: number;
-}
 
 interface ShopCardProps {
   isOpen: boolean;
@@ -22,64 +16,86 @@ interface ShopCardProps {
 }
 
 const ShopCard = ({ isOpen, onClose }: ShopCardProps) => {
-  const [cartItems, setCartItems] = useState<CartItem[]>([]);
-  const [totalPrice, setTotalPrice] = useState(0);
+  const { items, itemsCount, isLoading, refetchCart, cartId } = useCart();
+  const [removingItemId, setRemovingItemId] = useState<string | null>(null);
+  const [updatingItemId, setUpdatingItemId] = useState<string | null>(null);
 
-  // Récupération du panier
-  // const { data, isLoading: isCartLoading } = useQuery({
-  //   queryFn: () => sdk.store.cart.retrieve(),
-  //   queryKey: ["cart"],
-  //   enabled: isOpen,
-  // });
-
-  // useEffect(() => {
-  //   if (data?.cart) {
-  //     setCartItems(data.cart.items || []);
-  //     setTotal(data.cart.total || 0);
-  //     setIsLoading(false);
-  //   }
-  // }, [data]);
-
-  useEffect(() => {
-    if (isOpen) {
-      // Charger les données du localStorage
-      const cartItems = JSON.parse(localStorage.getItem("cart_items") || "[]");
-      setCartItems(cartItems);
-      calculateTotal(cartItems);
-    }
-  }, [isOpen]);
-
-  const calculateTotal = (items: CartItem[]) => {
-    const total = items.reduce(
-      (sum, item) => sum + item.unit_price * item.quantity,
-      0
-    );
-    setTotalPrice(total);
+  const calculateTotal = () => {
+    return items.reduce((total, item) => {
+      return total + (item.unit_price * item.quantity) / 100;
+    }, 0);
   };
 
-  const updateQuantity = (itemId: string, change: number) => {
-    const updatedItems = cartItems.map((item) => {
-      if (item.id === itemId) {
-        const newQuantity = Math.max(1, item.quantity + change);
-        return { ...item, quantity: newQuantity };
+  const updateQuantity = async (itemId: string, change: number) => {
+    if (!cartId) return;
+  
+    setUpdatingItemId(itemId);
+    try {
+      const currentItem = items.find((item) => item.id === itemId);
+      if (!currentItem) return;
+  
+      const newQuantity = Math.max(1, currentItem.quantity + change);
+  
+      const response = await fetch(
+        `https://vikytest-production.up.railway.app/store/carts/${cartId}/line-items/${itemId}`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "x-publishable-api-key": "pk_473000f8cbe0c01a9786d645f6dd877d21f5808740588f9c65131196ac5c84af",
+          },
+          body: JSON.stringify({
+            quantity: newQuantity,
+          }),
+        }
+      );
+  
+      if (!response.ok) {
+        const errorData = await response.json();
+        console.error("Erreur détaillée lors de la mise à jour:", errorData);
+        throw new Error("Erreur lors de la mise à jour de la quantité");
       }
-      return item;
-    });
-
-    setCartItems(updatedItems);
-    localStorage.setItem("cart_items", JSON.stringify(updatedItems));
-    window.dispatchEvent(new Event("cartUpdated"));
-    calculateTotal(updatedItems);
-    toast.success("Quantité mise à jour");
+  
+      await refetchCart();
+      toast.success("Quantité mise à jour");
+    } catch (error: any) {
+      console.error("Erreur:", error);
+      toast.error("Erreur lors de la mise à jour de la quantité");
+    } finally {
+      setUpdatingItemId(null);
+    }
   };
 
-  const removeItem = (itemId: string) => {
-    const updatedItems = cartItems.filter((item) => item.id !== itemId);
-    setCartItems(updatedItems);
-    localStorage.setItem("cart_items", JSON.stringify(updatedItems));
-    window.dispatchEvent(new Event("cartUpdated"));
-    calculateTotal(updatedItems);
-    toast.success("Produit supprimé du panier");
+  const removeItem = async (itemId: string) => {
+    if (!cartId) return;
+  
+    setRemovingItemId(itemId);
+    try {
+      const response = await fetch(
+        `https://vikytest-production.up.railway.app/store/carts/${cartId}/line-items/${itemId}`,
+        {
+          method: "DELETE",
+          headers: {
+            "Content-Type": "application/json",
+            "x-publishable-api-key": "pk_473000f8cbe0c01a9786d645f6dd877d21f5808740588f9c65131196ac5c84af",
+          }
+        }
+      );
+  
+      if (!response.ok) {
+        const errorData = await response.json();
+        console.error("Erreur détaillée lors de la suppression:", errorData);
+        throw new Error("Erreur lors de la suppression de l'article");
+      }
+  
+      await refetchCart();
+      toast.success("Produit supprimé du panier");
+    } catch (error: any) {
+      console.error("Erreur:", error);
+      toast.error("Erreur lors de la suppression de l'article");
+    } finally {
+      setRemovingItemId(null);
+    }
   };
 
   return (
@@ -90,11 +106,16 @@ const ShopCard = ({ isOpen, onClose }: ShopCardProps) => {
             <ShoppingBag className="w-6 h-6" />
             <h2 className="text-2xl font-semibold">Votre Panier</h2>
             <div className="ml-2 bg-pink-100 text-pink-600 px-2 py-1 rounded-full text-sm">
-              {cartItems.length} articles
+              {itemsCount} articles
             </div>
           </div>
 
-          {cartItems.length === 0 ? (
+          {isLoading ? (
+            <div className="flex flex-col items-center justify-center flex-grow gap-4">
+              <Loader2 className="w-8 h-8 animate-spin text-pink-600" />
+              <p>Chargement de votre panier...</p>
+            </div>
+          ) : itemsCount === 0 ? (
             <div className="flex flex-col items-center justify-center flex-grow gap-4 text-gray-500">
               <ShoppingBag className="w-12 h-12" />
               <p>Votre panier est vide</p>
@@ -102,24 +123,26 @@ const ShopCard = ({ isOpen, onClose }: ShopCardProps) => {
           ) : (
             <>
               <div className="flex-grow overflow-y-auto space-y-4">
-                {cartItems.map((item) => (
+                {items.map((item) => (
                   <div
                     key={item.id}
                     className="flex items-center gap-4 p-4 bg-white rounded-lg shadow"
                   >
                     <div className="relative w-20 h-20">
-                      <Image
-                        src={item.thumbnail}
-                        alt={item.title}
-                        fill
-                        className="object-cover rounded-md"
-                      />
+                      {item.thumbnail && (
+                        <Image
+                          src={item.thumbnail}
+                          alt={item.title}
+                          fill
+                          className="object-cover rounded-md"
+                        />
+                      )}
                     </div>
 
                     <div className="flex-grow">
                       <h3 className="font-medium">{item.title}</h3>
                       <p className="text-gray-600">
-                        {item.unit_price.toLocaleString()} FCFA
+                        {(item.unit_price / 100).toFixed(2)} €
                       </p>
 
                       <div className="flex items-center gap-4 mt-2">
@@ -127,13 +150,19 @@ const ShopCard = ({ isOpen, onClose }: ShopCardProps) => {
                           <button
                             onClick={() => updateQuantity(item.id, -1)}
                             className="p-1 hover:bg-gray-100"
+                            disabled={updatingItemId === item.id}
                           >
-                            <Minus className="w-4 h-4" />
+                            {updatingItemId === item.id ? (
+                              <Loader2 className="w-4 h-4 animate-spin" />
+                            ) : (
+                              <Minus className="w-4 h-4" />
+                            )}
                           </button>
                           <span className="px-4 py-1">{item.quantity}</span>
                           <button
                             onClick={() => updateQuantity(item.id, 1)}
                             className="p-1 hover:bg-gray-100"
+                            disabled={updatingItemId === item.id}
                           >
                             <Plus className="w-4 h-4" />
                           </button>
@@ -142,8 +171,13 @@ const ShopCard = ({ isOpen, onClose }: ShopCardProps) => {
                         <button
                           onClick={() => removeItem(item.id)}
                           className="p-1 text-red-500 hover:bg-red-50 rounded-full"
+                          disabled={removingItemId === item.id}
                         >
-                          <Trash2 className="w-5 h-5" />
+                          {removingItemId === item.id ? (
+                            <Loader2 className="w-5 h-5 animate-spin" />
+                          ) : (
+                            <Trash2 className="w-5 h-5" />
+                          )}
                         </button>
                       </div>
                     </div>
@@ -154,12 +188,20 @@ const ShopCard = ({ isOpen, onClose }: ShopCardProps) => {
               <div className="mt-6 space-y-4 border-t pt-4">
                 <div className="flex justify-between text-lg font-semibold">
                   <span>Total</span>
-                  <span>{totalPrice.toLocaleString()} FCFA</span>
+                  <span>{calculateTotal().toFixed(2)} €</span>
                 </div>
 
-                <Button className="w-full bg-pink-600 hover:bg-pink-700 text-white">
-                  Passer la commande
-                </Button>
+                <Link href="/cart" onClick={onClose}>
+                  <Button className="w-full bg-pink-600 hover:bg-pink-700 text-white">
+                    Voir le panier
+                  </Button>
+                </Link>
+
+                <Link href="/checkout" onClick={onClose}>
+                  <Button className="w-full bg-green-600 hover:bg-green-700 text-white">
+                    Passer la commande
+                  </Button>
+                </Link>
               </div>
             </>
           )}
