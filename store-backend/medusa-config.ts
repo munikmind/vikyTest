@@ -18,20 +18,6 @@ module.exports = defineConfig({
 
   },
   modules: [
-    {
-      resolve: "@medusajs/medusa/payment",
-      options: {
-        providers: [
-          {
-            resolve: "@medusajs/medusa/payment-system",
-            id: "manual",
-            options: {
-              // provider options if needed
-            },
-          },
-        ],
-      },
-    },
 
     {
       resolve: "@medusajs/medusa/cache-redis",
