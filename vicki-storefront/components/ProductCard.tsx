@@ -1,4 +1,3 @@
-import { Card, CardContent } from "@/components/ui/card";
 import { Poppins } from "next/font/google";
 import Image from "next/image";
 import Link from "next/link";
@@ -24,31 +23,48 @@ export const ProductCard = ({
 }: ProductCardProps) => {
   return (
     <Link href={`/products/${handle}`}>
-      <Card className="w-[300px] h-fit border-2 rounded-xl hover:shadow-lg transition-shadow">
-        <CardContent className="flex items-center justify-center gap-3 p-3 rounded-xl">
+      <div className="group relative flex flex-col">
+        {/* Image Container */}
+        <div className="relative w-full h-[400px] rounded-xl overflow-hidden bg-[#F5F0F0]">
           <Image
             src={imageSrc}
             alt={productName}
-            width={100}
-            height={100}
-            className="object-cover object-top w-[150px] h-[130px] rounded-xl"
+            fill
+            className="object-cover rounded-xl transition-transform duration-300 group-hover:scale-105"
           />
-          {/* Product details */}
-          <div className="flex flex-col items-start gap-6">
-            <p className={`${poppins.className} text-black font-semibold`}>
-              {productName}
-            </p>
-            <div className="flex flex-col items-start justify-start gap-1">
-              <p className={`${poppins.className} text-black font-semibold`}>
-                {price} FcFA
-              </p>
-              <button className="w-24 bg-[#D12E87] text-white font-semibold rounded-md border">
-                Ajouter
-              </button>
-            </div>
+          {/* Add to Cart Button - Appears on Hover */}
+          <div className="absolute bottom-4 right-4 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+            <button className="bg-black text-white p-2 rounded-full shadow-lg">
+              <svg
+                width="24"
+                height="24"
+                viewBox="0 0 24 24"
+                fill="none"
+                xmlns="http://www.w3.org/2000/svg"
+              >
+                <path
+                  d="M8 12h8M12 8v8"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                />
+              </svg>
+            </button>
           </div>
-        </CardContent>
-      </Card>
+        </div>
+
+        {/* Product Info */}
+        <div className="mt-4 space-y-1">
+          <h3
+            className={`${poppins.className} text-base font-normal text-black`}
+          >
+            {productName}
+          </h3>
+          <p className={`${poppins.className} text-base font-normal`}>
+            {price.toLocaleString()} FCFA
+          </p>
+        </div>
+      </div>
     </Link>
   );
 };

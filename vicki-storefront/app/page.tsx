@@ -7,8 +7,7 @@ import Navbar from "@/components/navbar";
 export default function Home() {
   return (
     <div className="px-4 md:px-8 lg:px-36">
-      <Navbar />
-      <div className="h-[50px]"></div>
+      <div className="h-[10px]"></div>
       <HeroSection />
       <div className="h-[100px]"></div>      
       <CategoriesSection />
@@ -16,7 +15,7 @@ export default function Home() {
       <AboutUs />
       <div className="h-[200px]"></div>
       <CurrentFavorite />
-      <div className="h-[100px]"></div>
+      
     </div>
   );
 }

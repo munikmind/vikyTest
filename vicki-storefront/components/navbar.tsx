@@ -1,13 +1,23 @@
+'use client'
 import { Search, CircleUser } from "lucide-react";
 import Image from "next/image";
+import Link from "next/link";
+import ShopCard from "./ShopCard";
+import { useState } from "react";
+
 export default function Navbar() {
+  const [isShopCardOpen, setIsShopCardOpen] = useState(false);
+
+  const toggleShopCard = () => {
+    setIsShopCardOpen(!isShopCardOpen);
+  };
   return (
-    <nav className="flex items-center justify-around bg-transparent p-4 w-full gap-32">
+    <nav className="flex items-center justify-around bg-transparent p-4 w-full gap-32 px-4 md:px-8 lg:px-36">
 
       {/* Logo & Search */}
       <div className='flex items-center justify-between w-full'>
       {/* Logo */}
-        <div className="text-pink-600 text-2xl font-semibold">VikiCollection</div>
+        <Link href="/" className="text-pink-600 text-2xl font-semibold">VikiCollection</Link>
 
         {/* Barre de recherche */}
         <div className="relative w-96">
@@ -42,9 +52,9 @@ export default function Navbar() {
         <div className='flex items-center gap-4'>
 
           {/* Shop Button */}
-          <button className='relative flex items-center gap-2'>
+          <button className='relative flex items-center gap-2' onClick={toggleShopCard}>
           <Image
-                src="/shopping-cart.svg"
+                src="/shopping-bag-2.svg"
             alt="Profile"
             width={50}
             height={50}
@@ -76,7 +86,7 @@ export default function Navbar() {
 
 
 
-
+      <ShopCard isOpen={isShopCardOpen} onClose={() => setIsShopCardOpen(false)} />
     </nav>
   );
 }
