@@ -15,7 +15,7 @@ export default function Habillement() {
     async function loadProducts() {
       try {
         const { products } = await getProductsByCategory(
-          "pcat_01JP0ZT4AJHYMB1DTNJXS6S3PH",
+          "pcat_01JNRN4P3DKQXTDJNVVZKK7WR7",
           50
         );
         setProducts(products);
@@ -54,12 +54,14 @@ export default function Habillement() {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {products.map((product) => (
               <ProductCard
-                key={product.id}
-                imageSrc={
-                  product.images?.[0]?.url || ""
-                }
-                productName={product.title}
-                price={getProductPrice(product)}
+              key={product.handle}
+              handle={product.handle}
+              imageSrc={
+                product.images?.[0]?.url ||
+                "/placeholder-image.png"
+              }
+              productName={product.title}
+              price={getProductPrice(product)}
               />
             ))}
           </div>

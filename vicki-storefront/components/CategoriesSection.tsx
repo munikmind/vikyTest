@@ -41,7 +41,7 @@ const CategoriesSection = () => {
               Habillement
             </p>
           </div>
-          <a href="/habillement">
+          <a href="/categories/habillement">
             <div className="absolute bottom-10 left-5 right-0 w-[180px] h-[45px] bg-white rounded-3xl flex items-center justify-center gap-3">
               <p
                 className={`${poppins.className} text-black font-medium text-xl`}
@@ -76,7 +76,7 @@ const CategoriesSection = () => {
             </p>
           </div>
 
-          <a href="/sisterlocks">
+          <a href="/categories/sisterlocks">
             <div className="absolute bottom-10 left-5 right-0 w-[180px] h-[45px] bg-white rounded-3xl flex items-center justify-center gap-3">
               <p
                 className={`${poppins.className} text-black font-medium text-xl`}
@@ -111,7 +111,7 @@ const CategoriesSection = () => {
             </p>
           </div>
 
-          <a href="/perruques">
+          <a href="/categories/perruques">
             <div className="absolute bottom-10 left-5 right-0 w-[180px] h-[45px] bg-white rounded-3xl flex items-center justify-center gap-3">
               <p
                 className={`${poppins.className} text-black font-medium text-xl`}

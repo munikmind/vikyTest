@@ -44,7 +44,9 @@ export async function getProductById(
   productId: string
 ): Promise<HttpTypes.StoreProduct> {
   try {
-    const { product } = await sdk.store.product.retrieve(productId);
+    const { product } = await sdk.store.product.retrieve(productId, {
+      fields: "*variants.calculated_price",
+    });
     return product;
   } catch (error) {
     console.error(
@@ -123,6 +125,38 @@ export async function getProductsByCategory(
   } catch (error) {
     console.error(
       `Erreur lors de la récupération des produits de la catégorie ${categoryId}:`,
+      error
+    );
+    throw error;
+  }
+}
+
+/**
+ * Récupère un produit par son handle
+ */
+export async function getProductByHandle(
+  handle: string
+): Promise<HttpTypes.StoreProduct> {
+  if (!handle) {
+    throw new Error("Le handle du produit est requis");
+  }
+
+  try {
+    const { products } = await sdk.store.product.list(
+      {
+        handle: handle,
+        fields: "*variants.calculated_price",
+      }
+    );
+
+    if (!products || products.length === 0) {
+      throw new Error(`Produit non trouvé avec le handle: ${handle}`);
+    }
+
+    return products[0];
+  } catch (error) {
+    console.error(
+      `Erreur lors de la récupération du produit avec le handle ${handle}:`,
       error
     );
     throw error;
