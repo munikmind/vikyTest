@@ -1,48 +1,34 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono, Poppins } from "next/font/google";
+import { Poppins } from "next/font/google";
 import "./globals.css";
-import { Providers } from './providers'
-import Navbar from "@/components/navbar";
+import { Providers } from "./providers";
 import Footer from "@/components/Footer";
-
-const geistSans = Geist({
-  variable: "--font-geist-sans",
-  subsets: ["latin"],
-});
-
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
-  subsets: ["latin"],
-});
+import Navbar from "@/components/navbar";
 
 const poppins = Poppins({
-  subsets: ['latin'],
-  weight: ['100', '200', '300', '400', '500', '600', '700', '800', '900'],
-  variable: '--font-poppins'
+  subsets: ["latin"],
+  weight: ["100", "200", "300", "400", "500", "600", "700", "800", "900"],
+  variable: "--font-poppins",
 });
 
 export const metadata: Metadata = {
   title: "VikiCollection",
-  description: "Votre destination beauté et mode",
+  description: "Votre partenaire beauté et mode",
 };
 
 export default function RootLayout({
   children,
 }: {
-  children: React.ReactNode
+  children: React.ReactNode;
 }) {
   return (
-    <html lang="en">
-      <body
-        className={`${poppins.variable} ${geistSans.variable} ${geistMono.variable} antialiased`}
-      >
+    <html lang="fr">
+      <body className={poppins.className}>
         <Navbar />
-        <Providers>
-          {children}
-        </Providers>
-        <div className="h-[100px]"></div>
-        <Footer/>
+        <Providers>{children}</Providers>
+        <div className="h-[100px]"></div> 
+        <Footer />
       </body>
     </html>
-  )
+  );
 }

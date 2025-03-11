@@ -6,6 +6,7 @@ import { HttpTypes } from "@medusajs/types";
 import { X } from "lucide-react";
 import { useEffect, useState } from "react";
 import FilterModal from "./FilterModal";
+import ShopCard from "./ShopCard";
 
 type Filter = {
   name: string;
@@ -27,7 +28,7 @@ export default function CategoryPage({
   const [error, setError] = useState<string | null>(null);
   const [activeFilters, setActiveFilters] = useState<Filter[]>([]);
   const [showFilterModal, setShowFilterModal] = useState(false);
-
+  const [isCartOpen, setIsCartOpen] = useState(false);
   useEffect(() => {
     async function loadProducts() {
       try {
@@ -161,6 +162,7 @@ export default function CategoryPage({
                 }
                 productName={product.title}
                 price={getProductPrice(product)}
+                onOpenCart={() => setIsCartOpen(true)}
               />
               {/* <div className="flex flex-col">
                 <h3 className="text-lg font-normal">{product.title}</h3>
@@ -185,6 +187,7 @@ export default function CategoryPage({
         onClose={() => setShowFilterModal(false)}
         onApplyFilters={handleApplyFilters}
       />
+      <ShopCard isOpen={isCartOpen} onClose={() => setIsCartOpen(false)} />
     </div>
   );
 }
