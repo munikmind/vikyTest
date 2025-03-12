@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { useCart } from "@/context/CartContext";
+import { sdk } from "@/lib/sdk";
 import { ArrowLeft, Check, Loader2, ShoppingBag } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -68,28 +69,10 @@ export default function CheckoutPage() {
         const storedCartId = localStorage.getItem("cart_id");
         if (!storedCartId) return;
 
-        const response = await fetch(
-          `https://vikytest-production.up.railway.app/store/carts/${storedCartId}`,
-          {
-            method: "GET",
-            headers: {
-              "Content-Type": "application/json",
-              "x-publishable-api-key":
-                "pk_473000f8cbe0c01a9786d645f6dd877d21f5808740588f9c65131196ac5c84af",
-            },
-          }
-        );
-
-        if (!response.ok) {
-          // Si le panier n'existe pas ou est inaccessible, créer un nouveau panier
-          await createNewCart();
-          return;
-        }
-
-        const cartData = await response.json();
+        const { cart } = await sdk.store.cart.retrieve(storedCartId);
 
         // Si le panier est déjà complété, créer un nouveau panier
-        if (cartData.cart?.completed_at) {
+        if (!cart) {
           console.log("Panier déjà complété, création d'un nouveau panier...");
           await createNewCart();
         }
@@ -104,37 +87,33 @@ export default function CheckoutPage() {
   // Fonction pour créer un nouveau panier
   const createNewCart = async () => {
     try {
-      console.log("Création d'un nouveau panier...");
-      const newCartResponse = await fetch(
-        "https://vikytest-production.up.railway.app/store/carts",
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            "x-publishable-api-key":
-              "pk_473000f8cbe0c01a9786d645f6dd877d21f5808740588f9c65131196ac5c84af",
-          },
-        }
-      );
+      console.log("Récupération des régions disponibles...");
+      const { regions } = await sdk.store.region.list();
 
-      if (newCartResponse.ok) {
-        const { cart: newCart } = await newCartResponse.json();
-        console.log("Nouveau panier créé:", newCart);
-
-        // Mettre à jour le localStorage avec le nouveau panier
-        localStorage.removeItem("cart_id");
-        localStorage.removeItem("cartItems");
-        localStorage.removeItem("paymentMethod");
-        localStorage.removeItem("transactionId");
-
-        // Définir le nouveau cartId
-        localStorage.setItem("cart_id", newCart.id);
-
-        // Recharger la page pour réinitialiser le contexte
-        window.location.reload();
-      } else {
-        console.error("Erreur lors de la création du nouveau panier");
+      if (!regions.length) {
+        throw new Error("Aucune région disponible");
       }
+
+      // Utiliser la première région disponible
+      const defaultRegion = regions[0];
+
+      console.log("Création d'un nouveau panier...");
+      const { cart: newCart } = await sdk.store.cart.create({
+        region_id: defaultRegion.id,
+      });
+      console.log("Nouveau panier créé:", newCart);
+
+      // Mettre à jour le localStorage avec le nouveau panier
+      localStorage.removeItem("cart_id");
+      localStorage.removeItem("cartItems");
+      localStorage.removeItem("paymentMethod");
+      localStorage.removeItem("transactionId");
+
+      // Définir le nouveau cartId
+      localStorage.setItem("cart_id", newCart.id);
+
+      // Recharger la page pour réinitialiser le contexte
+      window.location.reload();
     } catch (error) {
       console.error("Erreur lors de la création du nouveau panier:", error);
     }
@@ -150,25 +129,7 @@ export default function CheckoutPage() {
     try {
       // Récupérer les informations du panier
       console.log("Récupération des informations du panier...");
-      const cartResponse = await fetch(
-        `https://vikytest-production.up.railway.app/store/carts/${cartId}`,
-        {
-          method: "GET",
-          headers: {
-            "Content-Type": "application/json",
-            "x-publishable-api-key":
-              "pk_473000f8cbe0c01a9786d645f6dd877d21f5808740588f9c65131196ac5c84af",
-          },
-        }
-      );
-
-      if (!cartResponse.ok) {
-        throw new Error(
-          `Erreur lors de la récupération du panier: ${cartResponse.status}`
-        );
-      }
-
-      const cart = await cartResponse.json();
+      const { cart } = await sdk.store.cart.retrieve(cartId);
       console.log("Informations du panier récupérées:", cart);
 
       // Mettre à jour les métadonnées du panier avec les informations de paiement
@@ -178,40 +139,19 @@ export default function CheckoutPage() {
       const paymentMethod = localStorage.getItem("paymentMethod") || "manual";
       const transactionId = localStorage.getItem("transactionId") || "";
 
-      const updateCartResponse = await fetch(
-        `https://vikytest-production.up.railway.app/store/carts/${cartId}`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            "x-publishable-api-key":
-              "pk_473000f8cbe0c01a9786d645f6dd877d21f5808740588f9c65131196ac5c84af",
-          },
-          body: JSON.stringify({
-            metadata: {
-              payment_method: paymentMethod,
-              transaction_id: transactionId,
-              payment_status: "pending",
-            },
-          }),
-        }
+      const updateCartResponse = await sdk.store.cart.update(cartId, {
+        metadata: {
+          payment_method: paymentMethod,
+          transaction_id: transactionId,
+          payment_status: "pending",
+        },
+      });
+
+      console.log(
+        "Métadonnées du panier mises à jour:",
+        updateCartResponse.cart
       );
-
-      if (!updateCartResponse.ok) {
-        const errorData = await updateCartResponse.json();
-        console.error(
-          "Erreur détaillée lors de la mise à jour des métadonnées:",
-          errorData
-        );
-        throw new Error(
-          `Erreur lors de la mise à jour des métadonnées du panier: ${updateCartResponse.status}`
-        );
-      }
-
-      const updatedCart = await updateCartResponse.json();
-      console.log("Métadonnées du panier mises à jour:", updatedCart);
-
-      return updatedCart;
+      return updateCartResponse.cart;
     } catch (error) {
       console.error(
         "Erreur lors de l'initialisation de la collection de paiement:",
@@ -231,75 +171,42 @@ export default function CheckoutPage() {
 
       // Finaliser le panier
       console.log("Finalisation du panier...");
-      const response = await fetch(
-        `https://vikytest-production.up.railway.app/store/carts/${cartId}/complete`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            "x-publishable-api-key":
-              "pk_473000f8cbe0c01a9786d645f6dd877d21f5808740588f9c65131196ac5c84af",
-          },
-        }
-      );
+      const response = await sdk.store.cart.complete(cartId);
 
-      const data = await response.json();
-      console.log("Réponse de la finalisation:", data);
-
-      if (data.type === "cart" && data.cart) {
-        // Une erreur s'est produite
-        console.error("Erreur lors de la finalisation:", data.error);
-        throw new Error(
-          data.error?.message || "Impossible de finaliser la commande"
-        );
-      } else if (data.type === "order" && data.order) {
+      if (response.type === "order") {
         // Commande réussie
-        console.log("Commande placée avec succès:", data.order);
-        setOrder(data.order);
+        console.log("Commande placée avec succès:", response.order);
+        setOrder(response.order);
         setCurrentStep("complete");
 
         // Créer un nouveau panier
         try {
           console.log("Création d'un nouveau panier...");
-          const newCartResponse = await fetch(
-            "https://vikytest-production.up.railway.app/store/carts",
-            {
-              method: "POST",
-              headers: {
-                "Content-Type": "application/json",
-                "x-publishable-api-key":
-                  "pk_473000f8cbe0c01a9786d645f6dd877d21f5808740588f9c65131196ac5c84af",
-              },
-            }
-          );
+          const { cart: newCart } = await sdk.store.cart.create({
+            region_id: "reg_01HQ5QRWK1PVMH5YPWV4QE3JFG",
+          });
+          console.log("Nouveau panier créé:", newCart);
 
-          if (newCartResponse.ok) {
-            const { cart: newCart } = await newCartResponse.json();
-            console.log("Nouveau panier créé:", newCart);
+          // Mettre à jour le localStorage avec le nouveau panier
+          localStorage.removeItem("cart_id");
+          localStorage.removeItem("cartItems");
+          localStorage.removeItem("paymentMethod");
+          localStorage.removeItem("transactionId");
 
-            // Mettre à jour le localStorage avec le nouveau panier
-            localStorage.removeItem("cart_id");
-            localStorage.removeItem("cartItems");
-            localStorage.removeItem("paymentMethod");
-            localStorage.removeItem("transactionId");
+          // Attendre un court instant pour s'assurer que le localStorage est nettoyé
+          await new Promise((resolve) => setTimeout(resolve, 100));
 
-            // Attendre un court instant pour s'assurer que le localStorage est nettoyé
-            await new Promise((resolve) => setTimeout(resolve, 100));
+          // Définir le nouveau cartId
+          localStorage.setItem("cart_id", newCart.id);
 
-            // Définir le nouveau cartId
-            localStorage.setItem("cart_id", newCart.id);
-
-            // Forcer le rechargement de la page pour réinitialiser complètement le contexte
-            window.location.href = "/";
-          } else {
-            console.error("Erreur lors de la création du nouveau panier");
-          }
+          // Forcer le rechargement de la page pour réinitialiser complètement le contexte
+          window.location.href = "/";
         } catch (error) {
           console.error("Erreur lors de la création du nouveau panier:", error);
         }
 
         toast.success("Commande finalisée avec succès !");
-        return data.order;
+        return response;
       }
     } catch (error: any) {
       console.error("Erreur lors du processus de paiement:", error);
@@ -316,53 +223,25 @@ export default function CheckoutPage() {
         // Mettre à jour l'email du panier
         const cartId = localStorage.getItem("cart_id");
         if (cartId) {
-          const response = await fetch(
-            `https://vikytest-production.up.railway.app/store/carts/${cartId}`,
-            {
-              method: "POST",
-              headers: {
-                "Content-Type": "application/json",
-                "x-publishable-api-key":
-                  "pk_473000f8cbe0c01a9786d645f6dd877d21f5808740588f9c65131196ac5c84af",
-              },
-              body: JSON.stringify({ email: data.email }),
-            }
-          );
-
-          if (!response.ok) {
-            throw new Error("Erreur lors de la mise à jour de l'email");
-          }
+          await sdk.store.cart.update(cartId, {
+            email: data.email,
+          });
         }
         setCurrentStep("address");
       } else if (currentStep === "address") {
         // Mettre à jour l'adresse de livraison
         const cartId = localStorage.getItem("cart_id");
         if (cartId) {
-          const response = await fetch(
-            `https://vikytest-production.up.railway.app/store/carts/${cartId}`,
-            {
-              method: "POST",
-              headers: {
-                "Content-Type": "application/json",
-                "x-publishable-api-key":
-                  process.env.NEXT_PUBLIC_MEDUSA_PUBLISHABLE_KEY || "temp",
-              },
-              body: JSON.stringify({
-                shipping_address: {
-                  first_name: data.firstName,
-                  last_name: data.lastName,
-                  address_1: data.address,
-                  city: data.city,
-                  postal_code: data.postalCode,
-                  country_code: data.country,
-                },
-              }),
-            }
-          );
-
-          if (!response.ok) {
-            throw new Error("Erreur lors de la mise à jour de l'adresse");
-          }
+          await sdk.store.cart.update(cartId, {
+            shipping_address: {
+              first_name: data.firstName,
+              last_name: data.lastName,
+              address_1: data.address,
+              city: data.city,
+              postal_code: data.postalCode,
+              country_code: data.country,
+            },
+          });
         }
         setCurrentStep("shipping");
       } else if (currentStep === "shipping") {
@@ -370,30 +249,13 @@ export default function CheckoutPage() {
         const cartId = localStorage.getItem("cart_id");
         if (cartId) {
           console.log("Ajout de la méthode d'expédition...");
-       
+
           // Récupérer d'abord les options d'expédition disponibles
-          const optionsResponse = await fetch(
-            `https://vikytest-production.up.railway.app/store/shipping-options?cart_id=${cartId}`,
-            {
-              method: "GET",
-              headers: {
-                "Content-Type": "application/json",
-                "x-publishable-api-key":
-                  "pk_473000f8cbe0c01a9786d645f6dd877d21f5808740588f9c65131196ac5c84af",
-              },
-            }
-          );
+          const { shipping_options } =
+            await sdk.store.fulfillment.listCartOptions({
+              cart_id: cartId,
+            });
 
-          if (!optionsResponse.ok) {
-            const errorData = await optionsResponse.json();
-            console.error(
-              "Erreur lors de la récupération des options d'expédition:",
-              errorData
-            );
-            throw new Error("Impossible de récupérer les options d'expédition");
-          }
-
-          const { shipping_options } = await optionsResponse.json();
           console.log("Options d'expédition disponibles:", shipping_options);
 
           // Sélectionner l'option appropriée en fonction du choix de l'utilisateur
@@ -411,51 +273,14 @@ export default function CheckoutPage() {
           console.log("Option d'expédition sélectionnée:", selectedOption);
 
           // Ajouter la méthode d'expédition au panier
-          const shippingResponse = await fetch(
-            `https://vikytest-production.up.railway.app/store/carts/${cartId}/shipping-methods`,
-            {
-              method: "POST",
-              headers: {
-                "Content-Type": "application/json",
-                "x-publishable-api-key":
-                  "pk_473000f8cbe0c01a9786d645f6dd877d21f5808740588f9c65131196ac5c84af",
-              },
-              body: JSON.stringify({
-                option_id: selectedOption.id,
-              }),
-            }
-          );
-
-          if (!shippingResponse.ok) {
-            const errorData = await shippingResponse.json();
-            console.error(
-              "Erreur lors de l'ajout de la méthode d'expédition:",
-              errorData
-            );
-            throw new Error(
-              errorData.message ||
-                "Erreur lors de la sélection de la méthode de livraison"
-            );
-          }
-
-          const shippingData = await shippingResponse.json();
-          console.log("Méthode d'expédition ajoutée:", shippingData);
+          await sdk.store.cart.addShippingMethod(cartId, {
+            option_id: selectedOption.id,
+          });
 
           // Vérifier que la méthode d'expédition a bien été ajoutée
-          const cartCheckResponse = await fetch(
-            `https://vikytest-production.up.railway.app/store/carts/${cartId}`,
-            {
-              method: "GET",
-              headers: {
-                "Content-Type": "application/json",
-                "x-publishable-api-key":
-                  "pk_473000f8cbe0c01a9786d645f6dd877d21f5808740588f9c65131196ac5c84af",
-              },
-            }
-          );
+          const { cart: updatedCart } = await sdk.store.cart.retrieve(cartId);
 
-          const cartCheckData = await cartCheckResponse.json();
-          if (!cartCheckData.cart.shipping_methods?.length) {
+          if (!updatedCart.shipping_methods?.length) {
             throw new Error(
               "La méthode d'expédition n'a pas été correctement ajoutée au panier"
             );
@@ -466,183 +291,62 @@ export default function CheckoutPage() {
         console.log("Début du processus de paiement...");
 
         try {
-          // 1. Vérifier le cartId
-          const storedCartId = localStorage.getItem("cart_d");
+          const storedCartId = localStorage.getItem("cart_id");
           if (!storedCartId && !cartId) {
             throw new Error("Aucun panier trouvé");
           }
-          const currentCartId = storedCartId || cartId;
+          const currentCartId = storedCartId || cartId || "";
+          if (!currentCartId) {
+            throw new Error("Cart ID is required");
+          }
           console.log("CartId utilisé:", currentCartId);
 
-          // 2. Récupérer les informations du panier
-          console.log("Récupération des informations du panier...");
-          const cartResponse = await fetch(
-            `https://vikytest-production.up.railway.app/store/carts/${currentCartId}`,
-            {
-              method: "GET",
-              headers: {
-                "Content-Type": "application/json",
-                "x-publishable-api-key":
-                  process.env.NEXT_PUBLIC_MEDUSA_PUBLISHABLE_KEY || "temp",
-              },
-            }
-          );
-
-          if (!cartResponse.ok) {
-            throw new Error(
-              "Impossible de récupérer les informations du panier"
-            );
+          if (!currentCartId) {
+            throw new Error("Cart ID is required");
           }
 
-          const cartData = await cartResponse.json();
-          console.log("Informations du panier récupérées:", cartData);
+          // First retrieve the cart object
+          const { cart } = await sdk.store.cart.retrieve(currentCartId);
 
-          // 3. Créer une collection de paiement si elle n'existe pas
-          console.log("Création/vérification de la collection de paiement...");
-          let paymentCollectionId = cartData.cart?.payment_collection?.id;
-
-          if (!paymentCollectionId) {
-            const paymentCollectionResponse = await fetch(
-              "https://vikytest-production.up.railway.app/store/payment-collections",
-              {
-                method: "POST",
-                headers: {
-                  "Content-Type": "application/json",
-                  "x-publishable-api-key":
-                    process.env.NEXT_PUBLIC_MEDUSA_PUBLISHABLE_KEY || "temp",
-                },
-                body: JSON.stringify({
-                  cart_id: currentCartId,
-                }),
-              }
-            );
-
-            if (!paymentCollectionResponse.ok) {
-              const errorData = await paymentCollectionResponse.json();
-              console.error("Erreur de création de la collection:", errorData);
-              throw new Error("Impossible de créer la collection de paiement");
-            }
-
-            const { payment_collection } =
-              await paymentCollectionResponse.json();
-            paymentCollectionId = payment_collection.id;
+          if (!cart) {
+            throw new Error("Cart not found");
           }
 
-          // 4. Initialiser la session de paiement
-          console.log("Initialisation de la session de paiement...");
-          const initSessionResponse = await fetch(
-            `https://vikytest-production.up.railway.app/store/payment-collections/${paymentCollectionId}/payment-sessions`,
-            {
-              method: "POST",
-              headers: {
-                "Content-Type": "application/json",
-                "x-publishable-api-key":
-                  "pk_473000f8cbe0c01a9786d645f6dd877d21f5808740588f9c65131196ac5c84af",
-              },
-              body: JSON.stringify({
-                provider_id: "pp_system_default",
-              }),
-            }
-          );
+          // Then initialize payment session with the cart object
+          await sdk.store.payment.initiatePaymentSession(cart, {
+            provider_id: "pp_system_default",
+            data: {},
+          });
 
-          if (!initSessionResponse.ok) {
-            const errorData = await initSessionResponse
-              .json()
-              .catch(() => ({}));
-            console.error("Erreur d'initialisation de la session:", errorData);
-            throw new Error(
-              errorData.message ||
-                `Erreur d'initialisation de la session (${initSessionResponse.status})`
-            );
-          }
+          // Complete the cart
+          const response = await sdk.store.cart.complete(currentCartId);
 
-          const sessionData = await initSessionResponse.json();
-          console.log("Session de paiement créée:", sessionData);
-
-          // Autoriser la session de paiement
-          console.log("Autorisation de la session de paiement...");
-          const authorizeResponse = await fetch(
-            `https://vikytest-production.up.railway.app/store/payment-collections/${paymentCollectionId}/sessions/batch/authorize`,
-            {
-              method: "POST",
-              headers: {
-                "Content-Type": "application/json",
-                "x-publishable-api-key":
-                  "pk_473000f8cbe0c01a9786d645f6dd877d21f5808740588f9c65131196ac5c84af",
-              },
-              mode: "no-cors",
-            }
-          );
-
-          // Comme nous utilisons no-cors, nous ne pouvons pas vérifier le statut de la réponse
-          // Nous supposons que la requête a réussi si elle ne génère pas d'erreur
-          console.log("Session de paiement autorisée");
-
-          // 5. Finaliser la commande
-          console.log("Finalisation de la commande...");
-          const completeResponse = await fetch(
-            `https://vikytest-production.up.railway.app/store/carts/${currentCartId}/complete`,
-            {
-              method: "POST",
-              headers: {
-                "Content-Type": "application/json",
-                "x-publishable-api-key":
-                  process.env.NEXT_PUBLIC_MEDUSA_PUBLISHABLE_KEY || "temp",
-              },
-            }
-          );
-
-          const completeData = await completeResponse.json();
-          console.log("Réponse de la finalisation:", completeData);
-
-          if (completeData.type === "cart") {
-            throw new Error(
-              completeData.error?.message ||
-                "Impossible de finaliser la commande"
-            );
-          }
-
-          if (completeData.type === "order" && completeData.order) {
-            console.log("Commande placée avec succès:", completeData.order);
-            setOrder(completeData.order);
+          if (response.type === "order") {
+            console.log("Commande placée avec succès:", response.order);
+            setOrder(response.order);
             setCurrentStep("complete");
 
             // Créer un nouveau panier
             try {
-              console.log("Création d'un nouveau panier...");
-              const newCartResponse = await fetch(
-                "https://vikytest-production.up.railway.app/store/carts",
-                {
-                  method: "POST",
-                  headers: {
-                    "Content-Type": "application/json",
-                    "x-publishable-api-key":
-                      "pk_473000f8cbe0c01a9786d645f6dd877d21f5808740588f9c65131196ac5c84af",
-                  },
-                }
-              );
+              const { cart: newCart } = await sdk.store.cart.create({
+                region_id: "reg_01HQ5QRWK1PVMH5YPWV4QE3JFG",
+              });
+              console.log("Nouveau panier créé:", newCart);
 
-              if (newCartResponse.ok) {
-                const { cart: newCart } = await newCartResponse.json();
-                console.log("Nouveau panier créé:", newCart);
+              // Mettre à jour le localStorage avec le nouveau panier
+              localStorage.removeItem("cart_id");
+              localStorage.removeItem("cartItems");
+              localStorage.removeItem("paymentMethod");
+              localStorage.removeItem("transactionId");
 
-                // Mettre à jour le localStorage avec le nouveau panier
-                localStorage.removeItem("cart_id");
-                localStorage.removeItem("cartItems");
-                localStorage.removeItem("paymentMethod");
-                localStorage.removeItem("transactionId");
+              // Attendre un court instant pour s'assurer que le localStorage est nettoyé
+              await new Promise((resolve) => setTimeout(resolve, 100));
 
-                // Attendre un court instant pour s'assurer que le localStorage est nettoyé
-                await new Promise((resolve) => setTimeout(resolve, 100));
+              // Définir le nouveau cartId
+              localStorage.setItem("cart_id", newCart.id);
 
-                // Définir le nouveau cartId
-                localStorage.setItem("cart_id", newCart.id);
-
-                // Forcer le rechargement de la page pour réinitialiser complètement le contexte
-                window.location.href = "/";
-              } else {
-                console.error("Erreur lors de la création du nouveau panier");
-              }
+              // Rediriger vers la page d'accueil
+              window.location.href = "/";
             } catch (error) {
               console.error(
                 "Erreur lors de la création du nouveau panier:",
@@ -651,6 +355,8 @@ export default function CheckoutPage() {
             }
 
             toast.success("Commande finalisée avec succès !");
+          } else {
+            throw new Error("Impossible de finaliser la commande");
           }
         } catch (error: any) {
           console.error("Erreur lors du processus de paiement:", error);
