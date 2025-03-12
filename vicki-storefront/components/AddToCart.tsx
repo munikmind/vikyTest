@@ -78,6 +78,7 @@ const AddToCart = ({ product, onAddToCart }: AddToCartProps) => {
         refetchCart();
         return updatedCart;
       }
+      
 
       console.log("Utilisation du panier existant:", cartId);
       // Si nous avons un cartId, ajouter l'article au panier existant

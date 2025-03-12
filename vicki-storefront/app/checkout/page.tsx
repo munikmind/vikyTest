@@ -51,7 +51,7 @@ export default function CheckoutPage() {
       address: "",
       city: "",
       postalCode: "",
-      country: "FR",
+      country: "sn",
       shippingMethod: "standard",
       paymentMethod: "card",
     },
@@ -61,7 +61,84 @@ export default function CheckoutPage() {
     if (!cartId || itemsCount === 0) {
       router.push("/cart");
     }
+
+    // Vérifier si le panier est déjà complété
+    const checkCartStatus = async () => {
+      try {
+        const storedCartId = localStorage.getItem("cart_id");
+        if (!storedCartId) return;
+
+        const response = await fetch(
+          `https://vikytest-production.up.railway.app/store/carts/${storedCartId}`,
+          {
+            method: "GET",
+            headers: {
+              "Content-Type": "application/json",
+              "x-publishable-api-key":
+                "pk_473000f8cbe0c01a9786d645f6dd877d21f5808740588f9c65131196ac5c84af",
+            },
+          }
+        );
+
+        if (!response.ok) {
+          // Si le panier n'existe pas ou est inaccessible, créer un nouveau panier
+          await createNewCart();
+          return;
+        }
+
+        const cartData = await response.json();
+
+        // Si le panier est déjà complété, créer un nouveau panier
+        if (cartData.cart?.completed_at) {
+          console.log("Panier déjà complété, création d'un nouveau panier...");
+          await createNewCart();
+        }
+      } catch (error) {
+        console.error("Erreur lors de la vérification du panier:", error);
+      }
+    };
+
+    checkCartStatus();
   }, [cartId, itemsCount, router]);
+
+  // Fonction pour créer un nouveau panier
+  const createNewCart = async () => {
+    try {
+      console.log("Création d'un nouveau panier...");
+      const newCartResponse = await fetch(
+        "https://vikytest-production.up.railway.app/store/carts",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "x-publishable-api-key":
+              "pk_473000f8cbe0c01a9786d645f6dd877d21f5808740588f9c65131196ac5c84af",
+          },
+        }
+      );
+
+      if (newCartResponse.ok) {
+        const { cart: newCart } = await newCartResponse.json();
+        console.log("Nouveau panier créé:", newCart);
+
+        // Mettre à jour le localStorage avec le nouveau panier
+        localStorage.removeItem("cart_id");
+        localStorage.removeItem("cartItems");
+        localStorage.removeItem("paymentMethod");
+        localStorage.removeItem("transactionId");
+
+        // Définir le nouveau cartId
+        localStorage.setItem("cart_id", newCart.id);
+
+        // Recharger la page pour réinitialiser le contexte
+        window.location.reload();
+      } else {
+        console.error("Erreur lors de la création du nouveau panier");
+      }
+    } catch (error) {
+      console.error("Erreur lors de la création du nouveau panier:", error);
+    }
+  };
 
   const calculateTotal = () => {
     return items?.reduce((total, item) => {
@@ -146,7 +223,7 @@ export default function CheckoutPage() {
 
   const completeCart = async () => {
     try {
-      const cartId = localStorage.getItem("cartId");
+      const cartId = localStorage.getItem("cart_id");
       if (!cartId) {
         toast.error("Aucun panier trouvé");
         return;
@@ -181,11 +258,45 @@ export default function CheckoutPage() {
         setOrder(data.order);
         setCurrentStep("complete");
 
-        // Nettoyer le localStorage
-        localStorage.removeItem("cartId");
-        localStorage.removeItem("cartItems");
-        localStorage.removeItem("paymentMethod");
-        localStorage.removeItem("transactionId");
+        // Créer un nouveau panier
+        try {
+          console.log("Création d'un nouveau panier...");
+          const newCartResponse = await fetch(
+            "https://vikytest-production.up.railway.app/store/carts",
+            {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+                "x-publishable-api-key":
+                  "pk_473000f8cbe0c01a9786d645f6dd877d21f5808740588f9c65131196ac5c84af",
+              },
+            }
+          );
+
+          if (newCartResponse.ok) {
+            const { cart: newCart } = await newCartResponse.json();
+            console.log("Nouveau panier créé:", newCart);
+
+            // Mettre à jour le localStorage avec le nouveau panier
+            localStorage.removeItem("cart_id");
+            localStorage.removeItem("cartItems");
+            localStorage.removeItem("paymentMethod");
+            localStorage.removeItem("transactionId");
+
+            // Attendre un court instant pour s'assurer que le localStorage est nettoyé
+            await new Promise((resolve) => setTimeout(resolve, 100));
+
+            // Définir le nouveau cartId
+            localStorage.setItem("cart_id", newCart.id);
+
+            // Forcer le rechargement de la page pour réinitialiser complètement le contexte
+            window.location.href = "/";
+          } else {
+            console.error("Erreur lors de la création du nouveau panier");
+          }
+        } catch (error) {
+          console.error("Erreur lors de la création du nouveau panier:", error);
+        }
 
         toast.success("Commande finalisée avec succès !");
         return data.order;
@@ -203,7 +314,7 @@ export default function CheckoutPage() {
 
       if (currentStep === "email") {
         // Mettre à jour l'email du panier
-        const cartId = localStorage.getItem("cartId");
+        const cartId = localStorage.getItem("cart_id");
         if (cartId) {
           const response = await fetch(
             `https://vikytest-production.up.railway.app/store/carts/${cartId}`,
@@ -225,7 +336,7 @@ export default function CheckoutPage() {
         setCurrentStep("address");
       } else if (currentStep === "address") {
         // Mettre à jour l'adresse de livraison
-        const cartId = localStorage.getItem("cartId");
+        const cartId = localStorage.getItem("cart_id");
         if (cartId) {
           const response = await fetch(
             `https://vikytest-production.up.railway.app/store/carts/${cartId}`,
@@ -234,7 +345,7 @@ export default function CheckoutPage() {
               headers: {
                 "Content-Type": "application/json",
                 "x-publishable-api-key":
-                  "pk_473000f8cbe0c01a9786d645f6dd877d21f5808740588f9c65131196ac5c84af",
+                  process.env.NEXT_PUBLIC_MEDUSA_PUBLISHABLE_KEY || "temp",
               },
               body: JSON.stringify({
                 shipping_address: {
@@ -256,9 +367,51 @@ export default function CheckoutPage() {
         setCurrentStep("shipping");
       } else if (currentStep === "shipping") {
         // Sélectionner la méthode de livraison
-        const cartId = localStorage.getItem("cartId");
+        const cartId = localStorage.getItem("cart_id");
         if (cartId) {
-          const response = await fetch(
+          console.log("Ajout de la méthode d'expédition...");
+       
+          // Récupérer d'abord les options d'expédition disponibles
+          const optionsResponse = await fetch(
+            `https://vikytest-production.up.railway.app/store/shipping-options?cart_id=${cartId}`,
+            {
+              method: "GET",
+              headers: {
+                "Content-Type": "application/json",
+                "x-publishable-api-key":
+                  "pk_473000f8cbe0c01a9786d645f6dd877d21f5808740588f9c65131196ac5c84af",
+              },
+            }
+          );
+
+          if (!optionsResponse.ok) {
+            const errorData = await optionsResponse.json();
+            console.error(
+              "Erreur lors de la récupération des options d'expédition:",
+              errorData
+            );
+            throw new Error("Impossible de récupérer les options d'expédition");
+          }
+
+          const { shipping_options } = await optionsResponse.json();
+          console.log("Options d'expédition disponibles:", shipping_options);
+
+          // Sélectionner l'option appropriée en fonction du choix de l'utilisateur
+          const selectedOption = shipping_options.find(
+            (option: { name: string; id: string }) =>
+              data.shippingMethod === "express"
+                ? option.name.toLowerCase().includes("express")
+                : option.name.toLowerCase().includes("standard")
+          );
+
+          if (!selectedOption) {
+            throw new Error("Option d'expédition non trouvée");
+          }
+
+          console.log("Option d'expédition sélectionnée:", selectedOption);
+
+          // Ajouter la méthode d'expédition au panier
+          const shippingResponse = await fetch(
             `https://vikytest-production.up.railway.app/store/carts/${cartId}/shipping-methods`,
             {
               method: "POST",
@@ -268,14 +421,43 @@ export default function CheckoutPage() {
                   "pk_473000f8cbe0c01a9786d645f6dd877d21f5808740588f9c65131196ac5c84af",
               },
               body: JSON.stringify({
-                option_id: data.shippingMethod,
+                option_id: selectedOption.id,
               }),
             }
           );
 
-          if (!response.ok) {
+          if (!shippingResponse.ok) {
+            const errorData = await shippingResponse.json();
+            console.error(
+              "Erreur lors de l'ajout de la méthode d'expédition:",
+              errorData
+            );
             throw new Error(
-              "Erreur lors de la sélection de la méthode de livraison"
+              errorData.message ||
+                "Erreur lors de la sélection de la méthode de livraison"
+            );
+          }
+
+          const shippingData = await shippingResponse.json();
+          console.log("Méthode d'expédition ajoutée:", shippingData);
+
+          // Vérifier que la méthode d'expédition a bien été ajoutée
+          const cartCheckResponse = await fetch(
+            `https://vikytest-production.up.railway.app/store/carts/${cartId}`,
+            {
+              method: "GET",
+              headers: {
+                "Content-Type": "application/json",
+                "x-publishable-api-key":
+                  "pk_473000f8cbe0c01a9786d645f6dd877d21f5808740588f9c65131196ac5c84af",
+              },
+            }
+          );
+
+          const cartCheckData = await cartCheckResponse.json();
+          if (!cartCheckData.cart.shipping_methods?.length) {
+            throw new Error(
+              "La méthode d'expédition n'a pas été correctement ajoutée au panier"
             );
           }
         }
@@ -285,7 +467,7 @@ export default function CheckoutPage() {
 
         try {
           // 1. Vérifier le cartId
-          const storedCartId = localStorage.getItem("cartId");
+          const storedCartId = localStorage.getItem("cart_d");
           if (!storedCartId && !cartId) {
             throw new Error("Aucun panier trouvé");
           }
@@ -301,7 +483,7 @@ export default function CheckoutPage() {
               headers: {
                 "Content-Type": "application/json",
                 "x-publishable-api-key":
-                  "pk_473000f8cbe0c01a9786d645f6dd877d21f5808740588f9c65131196ac5c84af",
+                  process.env.NEXT_PUBLIC_MEDUSA_PUBLISHABLE_KEY || "temp",
               },
             }
           );
@@ -327,7 +509,7 @@ export default function CheckoutPage() {
                 headers: {
                   "Content-Type": "application/json",
                   "x-publishable-api-key":
-                    "pk_473000f8cbe0c01a9786d645f6dd877d21f5808740588f9c65131196ac5c84af",
+                    process.env.NEXT_PUBLIC_MEDUSA_PUBLISHABLE_KEY || "temp",
                 },
                 body: JSON.stringify({
                   cart_id: currentCartId,
@@ -358,16 +540,43 @@ export default function CheckoutPage() {
                   "pk_473000f8cbe0c01a9786d645f6dd877d21f5808740588f9c65131196ac5c84af",
               },
               body: JSON.stringify({
-                provider_id: "manual",
+                provider_id: "pp_system_default",
               }),
             }
           );
 
           if (!initSessionResponse.ok) {
-            const errorData = await initSessionResponse.json();
+            const errorData = await initSessionResponse
+              .json()
+              .catch(() => ({}));
             console.error("Erreur d'initialisation de la session:", errorData);
-            throw new Error("Impossible d'initialiser la session de paiement");
+            throw new Error(
+              errorData.message ||
+                `Erreur d'initialisation de la session (${initSessionResponse.status})`
+            );
           }
+
+          const sessionData = await initSessionResponse.json();
+          console.log("Session de paiement créée:", sessionData);
+
+          // Autoriser la session de paiement
+          console.log("Autorisation de la session de paiement...");
+          const authorizeResponse = await fetch(
+            `https://vikytest-production.up.railway.app/store/payment-collections/${paymentCollectionId}/sessions/batch/authorize`,
+            {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+                "x-publishable-api-key":
+                  "pk_473000f8cbe0c01a9786d645f6dd877d21f5808740588f9c65131196ac5c84af",
+              },
+              mode: "no-cors",
+            }
+          );
+
+          // Comme nous utilisons no-cors, nous ne pouvons pas vérifier le statut de la réponse
+          // Nous supposons que la requête a réussi si elle ne génère pas d'erreur
+          console.log("Session de paiement autorisée");
 
           // 5. Finaliser la commande
           console.log("Finalisation de la commande...");
@@ -378,7 +587,7 @@ export default function CheckoutPage() {
               headers: {
                 "Content-Type": "application/json",
                 "x-publishable-api-key":
-                  "pk_473000f8cbe0c01a9786d645f6dd877d21f5808740588f9c65131196ac5c84af",
+                  process.env.NEXT_PUBLIC_MEDUSA_PUBLISHABLE_KEY || "temp",
               },
             }
           );
@@ -398,11 +607,48 @@ export default function CheckoutPage() {
             setOrder(completeData.order);
             setCurrentStep("complete");
 
-            // Nettoyer le localStorage
-            localStorage.removeItem("cartId");
-            localStorage.removeItem("cartItems");
-            localStorage.removeItem("paymentMethod");
-            localStorage.removeItem("transactionId");
+            // Créer un nouveau panier
+            try {
+              console.log("Création d'un nouveau panier...");
+              const newCartResponse = await fetch(
+                "https://vikytest-production.up.railway.app/store/carts",
+                {
+                  method: "POST",
+                  headers: {
+                    "Content-Type": "application/json",
+                    "x-publishable-api-key":
+                      "pk_473000f8cbe0c01a9786d645f6dd877d21f5808740588f9c65131196ac5c84af",
+                  },
+                }
+              );
+
+              if (newCartResponse.ok) {
+                const { cart: newCart } = await newCartResponse.json();
+                console.log("Nouveau panier créé:", newCart);
+
+                // Mettre à jour le localStorage avec le nouveau panier
+                localStorage.removeItem("cart_id");
+                localStorage.removeItem("cartItems");
+                localStorage.removeItem("paymentMethod");
+                localStorage.removeItem("transactionId");
+
+                // Attendre un court instant pour s'assurer que le localStorage est nettoyé
+                await new Promise((resolve) => setTimeout(resolve, 100));
+
+                // Définir le nouveau cartId
+                localStorage.setItem("cart_id", newCart.id);
+
+                // Forcer le rechargement de la page pour réinitialiser complètement le contexte
+                window.location.href = "/";
+              } else {
+                console.error("Erreur lors de la création du nouveau panier");
+              }
+            } catch (error) {
+              console.error(
+                "Erreur lors de la création du nouveau panier:",
+                error
+              );
+            }
 
             toast.success("Commande finalisée avec succès !");
           }
@@ -647,10 +893,8 @@ export default function CheckoutPage() {
                       errors.country ? "border-red-500" : "border-gray-300"
                     }`}
                   >
-                    <option value="FR">France</option>
-                    <option value="BE">Belgique</option>
-                    <option value="CH">Suisse</option>
-                    <option value="LU">Luxembourg</option>
+                    <option value="fr">France</option>
+                    <option value="sn">Sénégal</option>
                   </select>
                   {errors.country && (
                     <p className="text-red-500 text-sm mt-1">

@@ -22,10 +22,11 @@ export default function CartPage() {
           method: "DELETE",
           headers: {
             "Content-Type": "application/json",
-            "x-publishable-api-key": "pk_473000f8cbe0c01a9786d645f6dd877d21f5808740588f9c65131196ac5c84af",
-          }
+            "x-publishable-api-key":
+              process.env.NEXT_PUBLIC_MEDUSA_PUBLISHABLE_KEY || "temp",
+          },
         }
-      );
+      );  
   
       if (!response.ok) {
         const errorData = await response.json();
