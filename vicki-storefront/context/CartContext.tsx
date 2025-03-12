@@ -1,6 +1,6 @@
 "use client";
 
-import { useQuery } from "@tanstack/react-query";
+import { addItemToCart, createCart, getCartById } from "@/lib/cart";
 import { createContext, useContext, useEffect, useState } from "react";
 
 interface CartItem {
@@ -9,6 +9,7 @@ interface CartItem {
   unit_price: number;
   quantity: number;
   thumbnail?: string;
+  product_title: string;
 }
 
 interface CartContextType {
@@ -18,6 +19,7 @@ interface CartContextType {
   itemsCount: number;
   isLoading: boolean;
   refetchCart: () => void;
+  addItem: (variantId: string, quantity: number) => Promise<void>;
 }
 
 const CartContext = createContext<CartContextType>({
@@ -27,56 +29,72 @@ const CartContext = createContext<CartContextType>({
   itemsCount: 0,
   isLoading: false,
   refetchCart: () => {},
+  addItem: async () => {},
 });
 
 export const CartProvider = ({ children }: { children: React.ReactNode }) => {
   const [cartId, setCartId] = useState<string | null>(null);
-
+  const [cart, setCart] = useState<any>(null);
+  const [isLoading, setIsLoading] = useState<boolean>(false);
+  const [items, setItems] = useState<any>([])
+  const [itemsCount, setitemsCount] = useState<any>(0)
   useEffect(() => {
     const storedCartId = localStorage.getItem("cart_id");
     if (storedCartId) {
       setCartId(storedCartId);
+      fetchCart(storedCartId);
     }
   }, []);
 
-  const {
-    data: cart,
-    refetch: refetchCart,
-    isLoading,
-  } = useQuery({
-    queryKey: ["cart", cartId],
-    queryFn: async () => {
-      if (!cartId) return null;
-
-      const response = await fetch(
-        `https://vikytest-production.up.railway.app/store/carts/${cartId}`,
-        {
-          headers: {
-            "Content-Type": "application/json",
-            "x-publishable-api-key":
-              "pk_473000f8cbe0c01a9786d645f6dd877d21f5808740588f9c65131196ac5c84af",
-          },
-        }
-      );
-
-      if (!response.ok) {
-        if (response.status === 404) {
-          // Si le panier n'existe pas, on le supprime du localStorage
-          localStorage.removeItem("cart_id");
-          setCartId(null);
-          return null;
-        }
-        throw new Error("Erreur lors de la récupération du panier");
+  const fetchCart = async (id: string) => {
+    setIsLoading(true);
+    try {
+      const cartData = await getCartById(id);
+      setCart(cartData);
+      setItems(cartData.cart.items)
+        setitemsCount(cartData.cart.items?.length || 0);
+    } catch (error) {
+      const errorMessage = (error as Error).message;
+      console.error("Erreur lors de la récupération du panier:", errorMessage);
+      if (errorMessage.includes("404")) {
+        localStorage.removeItem("cart_id");
+        setCartId(null);
       }
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
-      const data = await response.json();
-      return data.cart;
-    },
-    enabled: !!cartId,
-  });
+  const refetchCart = () => {
+    if (cartId) {
+      fetchCart(cartId);
+    }
+  };
 
-  const items = cart?.items || [];
-  const itemsCount = items.length;
+  const addItem = async (variantId: string, quantity: number) => {
+    if (cartId) {
+      try {
+        const updatedCart = await addItemToCart(cartId, variantId, quantity);
+        setCart(updatedCart);
+        setItems(updatedCart.cart.items)
+        setitemsCount(updatedCart.cart.items?.length || 0);
+        console.log('adding item to cart by the cart context ', updatedCart.cart.items);
+      } catch (error) {
+        console.error("Erreur lors de l'ajout du produit au panier:", error);
+      }
+      refetchCart();
+    } else {
+      console.log('adding item to cart by the cart context fail creating cart and add item again')
+      const newCart = await createCart();
+      setCartId(newCart.cart.id);
+      localStorage.setItem("cart_id", newCart.cart.id);
+      const newCartData = await addItemToCart(newCart.cart.id, variantId, quantity)
+      setCart(newCartData)
+      setItems(newCartData.cart.items)
+      setitemsCount(newCartData.cart.items?.length || 0);
+      refetchCart();
+    }
+  };
 
   useEffect(() => {
     const handleStorageChange = (e: StorageEvent) => {
@@ -99,6 +117,7 @@ export const CartProvider = ({ children }: { children: React.ReactNode }) => {
         itemsCount,
         isLoading,
         refetchCart,
+        addItem,
       }}
     >
       {children}

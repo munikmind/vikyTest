@@ -4,6 +4,8 @@
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent } from "@/components/ui/sheet";
 import { useCart } from "@/context/CartContext";
+import { deleteItem, updateItem } from "@/lib/cart";
+import { HttpTypes } from "@medusajs/types";
 import { Loader2, Minus, Plus, ShoppingBag, Trash2 } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
@@ -25,37 +27,26 @@ const ShopCard = ({ isOpen, onClose }: ShopCardProps) => {
       return total + (item.unit_price * item.quantity) / 100;
     }, 0);
   };
-
+  const getProductPrice = (product: HttpTypes.StoreProduct): number => {
+    const variant = product.variants?.[0];
+    return variant?.calculated_price?.calculated_amount || 0;
+  };
   const updateQuantity = async (itemId: string, change: number) => {
     if (!cartId) return;
-  
+
     setUpdatingItemId(itemId);
     try {
       const currentItem = items.find((item) => item.id === itemId);
       if (!currentItem) return;
-  
+
       const newQuantity = Math.max(1, currentItem.quantity + change);
-  
-      const response = await fetch(
-        `https://vikytest-production.up.railway.app/store/carts/${cartId}/line-items/${itemId}`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            "x-publishable-api-key": "pk_473000f8cbe0c01a9786d645f6dd877d21f5808740588f9c65131196ac5c84af",
-          },
-          body: JSON.stringify({
-            quantity: newQuantity,
-          }),
-        }
-      );
-  
-      if (!response.ok) {
-        const errorData = await response.json();
-        console.error("Erreur détaillée lors de la mise à jour:", errorData);
+
+      const response = await updateItem(cartId, itemId, newQuantity);
+
+      if (!response) {
         throw new Error("Erreur lors de la mise à jour de la quantité");
       }
-  
+
       await refetchCart();
       toast.success("Quantité mise à jour");
     } catch (error: any) {
@@ -68,26 +59,15 @@ const ShopCard = ({ isOpen, onClose }: ShopCardProps) => {
 
   const removeItem = async (itemId: string) => {
     if (!cartId) return;
-  
+
     setRemovingItemId(itemId);
     try {
-      const response = await fetch(
-        `https://vikytest-production.up.railway.app/store/carts/${cartId}/line-items/${itemId}`,
-        {
-          method: "DELETE",
-          headers: {
-            "Content-Type": "application/json",
-            "x-publishable-api-key": "pk_473000f8cbe0c01a9786d645f6dd877d21f5808740588f9c65131196ac5c84af",
-          }
-        }
-      );
-  
-      if (!response.ok) {
-        const errorData = await response.json();
-        console.error("Erreur détaillée lors de la suppression:", errorData);
+      const response = await deleteItem(cartId, itemId);
+
+      if (!response) {
         throw new Error("Erreur lors de la suppression de l'article");
       }
-  
+
       await refetchCart();
       toast.success("Produit supprimé du panier");
     } catch (error: any) {
@@ -140,10 +120,8 @@ const ShopCard = ({ isOpen, onClose }: ShopCardProps) => {
                     </div>
 
                     <div className="flex-grow">
-                      <h3 className="font-medium">{item.title}</h3>
-                      <p className="text-gray-600">
-                        {(item.unit_price / 100).toFixed(2)} €
-                      </p>
+                      <h3 className="font-medium">{item.product_title}</h3>
+                      <p className="text-gray-600">{item.unit_price} FCFA</p>
 
                       <div className="flex items-center gap-4 mt-2">
                         <div className="flex items-center border rounded-md">

@@ -77,7 +77,7 @@ export const ProductCard = ({
             {productName}
           </h3>
           <p className={`${poppins.className} text-base font-normal`}>
-            {(price / 100).toFixed(2)} €
+            {price} FCFA
           </p>
         </Link>
       </div>
