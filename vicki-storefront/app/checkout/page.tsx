@@ -121,98 +121,8 @@ export default function CheckoutPage() {
 
   const calculateTotal = () => {
     return items?.reduce((total, item) => {
-      return total + (item.unit_price * item.quantity) / 100;
+      return total + (item.unit_price * item.quantity);
     }, 0);
-  };
-
-  const initializePaymentCollection = async (cartId: string) => {
-    try {
-      // Récupérer les informations du panier
-      console.log("Récupération des informations du panier...");
-      const { cart } = await sdk.store.cart.retrieve(cartId);
-      console.log("Informations du panier récupérées:", cart);
-
-      // Mettre à jour les métadonnées du panier avec les informations de paiement
-      console.log(
-        "Mise à jour des métadonnées du panier avec les informations de paiement..."
-      );
-      const paymentMethod = localStorage.getItem("paymentMethod") || "manual";
-      const transactionId = localStorage.getItem("transactionId") || "";
-
-      const updateCartResponse = await sdk.store.cart.update(cartId, {
-        metadata: {
-          payment_method: paymentMethod,
-          transaction_id: transactionId,
-          payment_status: "pending",
-        },
-      });
-
-      console.log(
-        "Métadonnées du panier mises à jour:",
-        updateCartResponse.cart
-      );
-      return updateCartResponse.cart;
-    } catch (error) {
-      console.error(
-        "Erreur lors de l'initialisation de la collection de paiement:",
-        error
-      );
-      throw error;
-    }
-  };
-
-  const completeCart = async () => {
-    try {
-      const cartId = localStorage.getItem("cart_id");
-      if (!cartId) {
-        toast.error("Aucun panier trouvé");
-        return;
-      }
-
-      // Finaliser le panier
-      console.log("Finalisation du panier...");
-      const response = await sdk.store.cart.complete(cartId);
-
-      if (response.type === "order") {
-        // Commande réussie
-        console.log("Commande placée avec succès:", response.order);
-        setOrder(response.order);
-        setCurrentStep("complete");
-
-        // Créer un nouveau panier
-        try {
-          console.log("Création d'un nouveau panier...");
-          const { cart: newCart } = await sdk.store.cart.create({
-            region_id: "reg_01HQ5QRWK1PVMH5YPWV4QE3JFG",
-          });
-          console.log("Nouveau panier créé:", newCart);
-
-          // Mettre à jour le localStorage avec le nouveau panier
-          localStorage.removeItem("cart_id");
-          localStorage.removeItem("cartItems");
-          localStorage.removeItem("paymentMethod");
-          localStorage.removeItem("transactionId");
-
-          // Attendre un court instant pour s'assurer que le localStorage est nettoyé
-          await new Promise((resolve) => setTimeout(resolve, 100));
-
-          // Définir le nouveau cartId
-          localStorage.setItem("cart_id", newCart.id);
-
-          // Forcer le rechargement de la page pour réinitialiser complètement le contexte
-          window.location.href = "/";
-        } catch (error) {
-          console.error("Erreur lors de la création du nouveau panier:", error);
-        }
-
-        toast.success("Commande finalisée avec succès !");
-        return response;
-      }
-    } catch (error: any) {
-      console.error("Erreur lors du processus de paiement:", error);
-      toast.error(error.message || "Une erreur est survenue lors du paiement");
-      throw error;
-    }
   };
 
   const onSubmit = async (data: CheckoutForm) => {
@@ -317,47 +227,25 @@ export default function CheckoutPage() {
             provider_id: "pp_system_default",
             data: {},
           });
+         
 
           // Complete the cart
-          const response = await sdk.store.cart.complete(currentCartId);
-
-          if (response.type === "order") {
-            console.log("Commande placée avec succès:", response.order);
-            setOrder(response.order);
-            setCurrentStep("complete");
-
-            // Créer un nouveau panier
-            try {
-              const { cart: newCart } = await sdk.store.cart.create({
-                region_id: "reg_01HQ5QRWK1PVMH5YPWV4QE3JFG",
-              });
-              console.log("Nouveau panier créé:", newCart);
-
-              // Mettre à jour le localStorage avec le nouveau panier
+          await sdk.store.cart.complete(currentCartId).then((data) => {
+            if (data.type === "cart") {
+              // Le panier n'est pas complété
+              console.log(data.error.message);
+            } else {
+              // Le panier est complété
               localStorage.removeItem("cart_id");
               localStorage.removeItem("cartItems");
               localStorage.removeItem("paymentMethod");
               localStorage.removeItem("transactionId");
-
-              // Attendre un court instant pour s'assurer que le localStorage est nettoyé
-              await new Promise((resolve) => setTimeout(resolve, 100));
-
-              // Définir le nouveau cartId
-              localStorage.setItem("cart_id", newCart.id);
-
-              // Rediriger vers la page d'accueil
-              window.location.href = "/";
-            } catch (error) {
-              console.error(
-                "Erreur lors de la création du nouveau panier:",
-                error
-              );
+              console.log("Panier complété, commande créée:", data.order);
+              setOrder(data.order);
+              setCurrentStep("complete");
             }
-
-            toast.success("Commande finalisée avec succès !");
-          } else {
-            throw new Error("Impossible de finaliser la commande");
-          }
+          })
+          
         } catch (error: any) {
           console.error("Erreur lors du processus de paiement:", error);
           toast.error(
@@ -746,7 +634,7 @@ export default function CheckoutPage() {
                 <div className="ml-4 flex-grow">
                   <p className="font-medium">{item.title}</p>
                   <p className="text-sm text-gray-600">
-                    {(item.unit_price / 100).toFixed(2)} €
+                    {item.unit_price} FCFA
                   </p>
                 </div>
               </div>
@@ -756,7 +644,7 @@ export default function CheckoutPage() {
           <div className="space-y-2 mb-4 pt-4 border-t">
             <div className="flex justify-between">
               <span>Sous-total</span>
-              <span>{calculateTotal().toFixed(2)} €</span>
+              <span>{calculateTotal()} FCFA</span>
             </div>
             <div className="flex justify-between">
               <span>Livraison</span>
@@ -770,8 +658,8 @@ export default function CheckoutPage() {
                 {(
                   calculateTotal() +
                   (watch("shippingMethod") === "express" ? 10 : 0)
-                ).toFixed(2)}{" "}
-                €
+                )}{" "}
+                FCFA
               </span>
             </div>
           </div>

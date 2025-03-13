@@ -2,10 +2,12 @@
 
 import { Button } from "@/components/ui/button";
 import { useCart } from "@/context/CartContext";
+import { deleteItem } from "@/lib/cart";
 import { Loader2, ShoppingBag, Trash2 } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import { useState } from "react";
+import { toast } from "sonner";
 
 export default function CartPage() {
   const { items, itemsCount, isLoading, refetchCart, cartId } = useCart();
@@ -13,32 +15,20 @@ export default function CartPage() {
 
   const removeItem = async (itemId: string) => {
     if (!cartId) return;
-  
+
     setRemovingItemId(itemId);
     try {
-      const response = await fetch(
-        `https://vikytest-production.up.railway.app/store/carts/${cartId}/line-items/${itemId}`,
-        {
-          method: "DELETE",
-          headers: {
-            "Content-Type": "application/json",
-            "x-publishable-api-key":
-              process.env.NEXT_PUBLIC_MEDUSA_PUBLISHABLE_KEY || "temp",
-          },
-        }
-      );  
-  
-      if (!response.ok) {
-        const errorData = await response.json();
-        console.error("Erreur détaillée lors de la suppression:", errorData);
+      const response = await deleteItem(cartId, itemId);
+
+      if (!response) {
         throw new Error("Erreur lors de la suppression de l'article");
       }
-  
+
       await refetchCart();
-      // toast.success("Produit supprimé du panier");
+      toast.success("Produit supprimé du panier");
     } catch (error: any) {
       console.error("Erreur:", error);
-      // toast.error("Erreur lors de la suppression de l'article");
+      toast.error("Erreur lors de la suppression de l'article");
     } finally {
       setRemovingItemId(null);
     }
@@ -46,7 +36,7 @@ export default function CartPage() {
 
   const calculateTotal = () => {
     return items.reduce((total, item) => {
-      return total + (item.unit_price * item.quantity) / 100;
+      return total + (item.unit_price * item.quantity);
     }, 0);
   };
 
@@ -85,17 +75,17 @@ export default function CartPage() {
                 {item.thumbnail && (
                   <Image
                     src={item.thumbnail}
-                    alt={item.title}
+                    alt={item.product_title}
                     fill
                     className="object-cover rounded"
                   />
                 )}
               </div>
               <div className="ml-4 flex-grow">
-                <h3 className="font-medium">{item.title}</h3>
+                <h3 className="font-medium">{item.product_title}</h3>
                 <p className="text-gray-600">Quantité: {item.quantity}</p>
                 <p className="font-medium">
-                  {(item.unit_price / 100).toFixed(2)} €
+                  {item.unit_price } FCFA
                 </p>
               </div>
               <div>
@@ -122,11 +112,11 @@ export default function CartPage() {
           <div className="space-y-2 mb-4">
             <div className="flex justify-between">
               <span>Sous-total</span>
-              <span>{calculateTotal().toFixed(2)} €</span>
+              <span>{calculateTotal()} FCFA</span>
             </div>
             <div className="flex justify-between font-bold text-lg pt-2 border-t">
               <span>Total</span>
-              <span>{calculateTotal().toFixed(2)} €</span>
+              <span>{calculateTotal()} FCFA</span>
             </div>
           </div>
 
