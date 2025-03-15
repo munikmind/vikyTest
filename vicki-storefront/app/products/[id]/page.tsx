@@ -1,10 +1,28 @@
 "use client";
 
-import Navbar from "@/components/navbar";
+import AddToCart from "@/components/AddToCart";
 import { getProductByHandle } from "@/lib/products";
 import { HttpTypes } from "@medusajs/types";
 import Image from "next/image";
 import { use, useEffect, useState } from "react";
+
+interface ProductType {
+  id: string;
+  variantId: string;
+  title: string;
+  thumbnail: string;
+  price: number;
+  onOpenCart?: () => void;
+}
+
+const getProductVariantId = (product: HttpTypes.StoreProduct): string => {
+  return product.variants?.[0]?.id || "";
+};
+
+const getProductPrice = (product: HttpTypes.StoreProduct): number => {
+  const variant = product.variants?.[0];
+  return variant?.calculated_price?.calculated_amount || 0;
+};
 
 export default function ProductInfo({
   params,
@@ -12,11 +30,12 @@ export default function ProductInfo({
   params: Promise<{ id: string }>;
 }) {
   const resolvedParams = use(params);
-  const [product, setProduct] = useState<HttpTypes.StoreProduct | null>(null);
+  const [product, setProduct] = useState<HttpTypes.StoreProduct>();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [selectedColor, setSelectedColor] = useState<string>("green");
   const [selectedSize, setSelectedSize] = useState<string>("xl");
+  const [isCartOpen, setIsCartOpen] = useState(false);
 
   useEffect(() => {
     async function loadProduct() {
@@ -34,14 +53,19 @@ export default function ProductInfo({
     loadProduct();
   }, [resolvedParams.id]);
 
-  const getProductPrice = (product: HttpTypes.StoreProduct): number => {
-    const variant = product.variants?.[0];
-    return variant?.calculated_price?.calculated_amount || 0;
+  const productToAddCart = {
+    id: product?.id || "",
+    variantId: product ? getProductVariantId(product) : "",
+    title: product?.title || "Produit sans titre",
+    thumbnail:
+      product?.images?.[0]?.url ||
+      product?.thumbnail ||
+      "/placeholder-image.png",
+    price: product ? getProductPrice(product) : 0,
   };
 
   return (
     <div className="px-4 md:px-8 lg:px-36 w-full">
-      
       <div className="h-[50px]"></div>
 
       {loading && (
@@ -146,9 +170,8 @@ export default function ProductInfo({
             </div>
 
             {/* Add to Cart Button */}
-            <button className="w-[155px] py-4 bg-[#D12E87] text-white font-semibold rounded-full text-sm hover:bg-[#B0246F] transition-colors">
-              Ajouter au panier
-            </button>
+
+            <AddToCart product={productToAddCart} onAddToCart={() => setIsCartOpen(true)} />
 
             {/* Accordion Sections */}
             <div className="border-t pt-4">

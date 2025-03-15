@@ -48,8 +48,8 @@ export const ProductCard = ({
       onMouseLeave={() => setShowAddToCart(false)}
     >
       {/* Image Container */}
-      <Link href={`/products/${handle}`}>
-        <div className="relative w-full h-[400px] rounded-xl overflow-hidden bg-[#F5F0F0]">
+      <Link href={`/products/${handle}`} className="w-[385px]">
+        <div className="relative w-full h-[600px] rounded-xl overflow-hidden bg-[#F5F0F0]">
           <Image
             src={imageSrc}
             alt={productName}
@@ -72,7 +72,7 @@ export const ProductCard = ({
       <div className="mt-4 space-y-1">
         <Link href={`/products/${handle}`}>
           <h3
-            className={`${poppins.className} text-base font-normal text-black`}
+            className={`${poppins.className} text-lg font-medium text-black`}
           >
             {productName}
           </h3>

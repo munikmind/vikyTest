@@ -24,7 +24,7 @@ const ShopCard = ({ isOpen, onClose }: ShopCardProps) => {
 
   const calculateTotal = () => {
     return items.reduce((total, item) => {
-      return total + (item.unit_price * item.quantity) / 100;
+      return total + (item.unit_price * item.quantity);
     }, 0);
   };
   const getProductPrice = (product: HttpTypes.StoreProduct): number => {
@@ -165,21 +165,22 @@ const ShopCard = ({ isOpen, onClose }: ShopCardProps) => {
 
               <div className="mt-6 space-y-4 border-t pt-4">
                 <div className="flex justify-between text-lg font-semibold">
-                  <span>Total</span>
-                  <span>{calculateTotal().toFixed(2)} €</span>
+                  <span>Total :</span>
+                  <span>{calculateTotal()} FCFA</span>
                 </div>
+                <div className="flex gap-6">
+                  <Link href="/cart" onClick={onClose} className="w-1/2">
+                    <Button className="w-full bg-black hover:bg-gray-800 text-white">
+                      Voir le panier
+                    </Button>
+                  </Link>
 
-                <Link href="/cart" onClick={onClose}>
-                  <Button className="w-full bg-pink-600 hover:bg-pink-700 text-white">
-                    Voir le panier
-                  </Button>
-                </Link>
-
-                <Link href="/checkout" onClick={onClose}>
-                  <Button className="w-full bg-green-600 hover:bg-green-700 text-white">
-                    Passer la commande
-                  </Button>
-                </Link>
+                  <Link href="/checkout" onClick={onClose} className="w-1/2">
+                    <Button className="w-full  bg-pink-600 hover:bg-pink-700 text-white">
+                      Passer la commande
+                    </Button>
+                  </Link>
+                </div>
               </div>
             </>
           )}

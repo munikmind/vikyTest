@@ -155,7 +155,7 @@ export default function CategoryPage({
 
       {/* Products Grid */}
       {!loading && !error && (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-x-6 gap-y-12">
+        <div className="w-full flex flex-wrap justify-start items-center gap-6">
           {getFilteredProducts().map((product) => (
             <div key={product.handle} className="flex flex-col gap-3">
               <ProductCard
