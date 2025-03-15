@@ -1,19 +1,11 @@
 "use client";
 
 import AddToCart from "@/components/AddToCart";
+import ShopCard from "@/components/ShopCard";
 import { getProductByHandle } from "@/lib/products";
 import { HttpTypes } from "@medusajs/types";
 import Image from "next/image";
 import { use, useEffect, useState } from "react";
-
-interface ProductType {
-  id: string;
-  variantId: string;
-  title: string;
-  thumbnail: string;
-  price: number;
-  onOpenCart?: () => void;
-}
 
 const getProductVariantId = (product: HttpTypes.StoreProduct): string => {
   return product.variants?.[0]?.id || "";
@@ -42,6 +34,7 @@ export default function ProductInfo({
       try {
         const productData = await getProductByHandle(resolvedParams.id);
         setProduct(productData);
+        console.log('productData :', productData)
       } catch (err) {
         console.error("Error loading product:", err);
         setError("Une erreur est survenue lors du chargement du produit");
@@ -62,6 +55,7 @@ export default function ProductInfo({
       product?.thumbnail ||
       "/placeholder-image.png",
     price: product ? getProductPrice(product) : 0,
+    categorie: product?.categories?.[0].name,
   };
 
   return (
@@ -214,6 +208,7 @@ export default function ProductInfo({
           </div>
         </div>
       )}
+    <ShopCard isOpen={isCartOpen} onClose={() => setIsCartOpen(false)} />
     </div>
   );
 }

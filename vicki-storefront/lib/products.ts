@@ -7,6 +7,7 @@ export type ProductListParams = {
   q?: string;
   collection_id?: string[];
   category_id?: string[];
+  expand?: string;
 };
 
 /**
@@ -20,7 +21,7 @@ export async function getProducts(
     const { products, count, offset, limit } = await sdk.store.product.list(
       {
         ...params,
-        fields: `*variants.calculated_price`,
+        fields: `*variants.calculated_price, *categories`,
         region_id: regionId,
       },
       {
@@ -45,7 +46,7 @@ export async function getProductById(
 ): Promise<HttpTypes.StoreProduct> {
   try {
     const { product } = await sdk.store.product.retrieve(productId, {
-      fields: "*variants.calculated_price",
+      fields: "*variants.calculated_price, *categories",
     });
     return product;
   } catch (error) {
@@ -112,7 +113,7 @@ export async function getProductsByCategory(
         category_id: [categoryId],
         limit,
         offset,
-        fields: `*variants.calculated_price`,
+        fields: `*variants.calculated_price, *categories`,
       },
       {
         headers: {
@@ -145,7 +146,8 @@ export async function getProductByHandle(
     const { products } = await sdk.store.product.list(
       {
         handle: handle,
-        fields: "*variants.calculated_price",
+        fields: "*variants.calculated_price, *categories",
+        
       }
     );
 

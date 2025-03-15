@@ -13,6 +13,7 @@ interface AddToCartProps {
     thumbnail: string;
     price: number;
     variantId?: string;
+    categorie?: string;
   };
   onAddToCart?: () => void;
 }
@@ -22,11 +23,12 @@ const AddToCart = ({ product, onAddToCart }: AddToCartProps) => {
 
   const { mutate: addToCart, isPending } = useMutation({
     mutationFn: async () => {
-      console.log("Utilisation du panier existant:", cartId);
+      console.log('product', product)
+      // console.log("Utilisation du panier existant:", cartId);
       // Si nous avons un cartId, ajouter l'article au panier existant
       await addItem(product.variantId || product.id, 1);
 
-      console.log('cart provided by cart context', cart);
+      // console.log('cart provided by cart context', cart);
       return cart;
     },
     onSuccess: (data) => {
@@ -63,7 +65,12 @@ const AddToCart = ({ product, onAddToCart }: AddToCartProps) => {
       ) : (
         <div className="flex items-center gap-2">
           <ShoppingBag className="w-4 h-4" />
-          <span>Ajouter au panier</span>
+          { product.categorie === "coiffure" ? (
+            <span>Reserver votre coiffure</span>
+          ) : (
+            <span>Ajouter au panier</span>
+          )
+          }
         </div>
       )}
     </Button>

@@ -2,7 +2,7 @@
 // import { sdk } from "@/lib/config";
 // import { useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
-import { Sheet, SheetContent } from "@/components/ui/sheet";
+import { Sheet, SheetContent, SheetTitle } from "@/components/ui/sheet";
 import { useCart } from "@/context/CartContext";
 import { deleteItem, updateItem } from "@/lib/cart";
 import { HttpTypes } from "@medusajs/types";
@@ -84,7 +84,7 @@ const ShopCard = ({ isOpen, onClose }: ShopCardProps) => {
         <div className="flex flex-col h-full">
           <div className="flex items-center gap-2 mb-6">
             <ShoppingBag className="w-6 h-6" />
-            <h2 className="text-2xl font-semibold">Votre Panier</h2>
+            <SheetTitle className="text-2xl font-semibold">Votre Panier</SheetTitle>
             <div className="ml-2 bg-pink-100 text-pink-600 px-2 py-1 rounded-full text-sm">
               {itemsCount} articles
             </div>

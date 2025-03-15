@@ -19,6 +19,7 @@ interface ProductCardProps {
   handle: string;
   productId: string;
   variantId: string;
+  categorie?: string;
   onOpenCart?: () => void;
 }
 
@@ -29,6 +30,7 @@ export const ProductCard = ({
   handle,
   productId,
   variantId,
+  categorie,
   onOpenCart,
 }: ProductCardProps) => {
   const [showAddToCart, setShowAddToCart] = useState(false);
@@ -38,6 +40,7 @@ export const ProductCard = ({
     variantId: variantId,
     title: productName,
     thumbnail: imageSrc,
+    categorie: categorie,
     price: price,
   };
 

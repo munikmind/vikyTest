@@ -169,6 +169,7 @@ export default function CategoryPage({
                 }
                 productName={product.title}
                 price={getProductPrice(product)}
+                categorie={product?.categories?.[0].name}
                 onOpenCart={() => setIsCartOpen(true)}
               />
             </div>
