@@ -1,10 +1,9 @@
 "use client";
 import { HttpTypes } from "@medusajs/types";
-import { motion, useInView } from "framer-motion";
 import { Poppins } from "next/font/google";
 import Image from "next/image";
 import Link from "next/link";
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState } from "react";
 import { getProductsByCollection } from "../lib/products";
 
 const poppins = Poppins({
@@ -18,8 +17,6 @@ const CurrentFavorite = () => {
     HttpTypes.StoreProduct[]
   >([]);
   const [isLoading, setIsLoading] = useState(true);
-  const ref = useRef(null);
-  const inView = useInView(ref, { once: true });
   useEffect(() => {
     const fetchProducts = async () => {
       try {
@@ -69,11 +66,8 @@ const CurrentFavorite = () => {
         <div className="flex flex-col md:flex-row md:items-end gap-6">
           {/* Première carte (plus grande) */}
           {favoriteProducts.length > 0 && (
-            <motion.div
+            <div
               className="md:w-1/3 mb-6 md:mb-0"
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5 }}
             >
               <div className="relative rounded-xl overflow-hidden h-[500px] md:h-[600px]">
                 <Image
@@ -107,24 +101,18 @@ const CurrentFavorite = () => {
                   </Link>
                 </div>
               </div>
-            </motion.div>
+            </div>
           )}
 
           {/* Autres cartes (plus petites, en grille) */}
           <div className="md:w-2/3">
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 h-full">
-              {favoriteProducts.slice(1, 4).map((product, index) => {
-                
-                
+              {favoriteProducts.slice(1, 4).map((product, index) => {                
 
                 return (
-                  <motion.div
+                  <div
                     key={product.id}
-                    ref={ref}
                     className="relative rounded-xl overflow-hidden h-[300px] md:h-[290px]"
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={inView ? { opacity: 1, y: 0 } : {}}
-                    transition={{ duration: 0.5 }}
                   >
                     {/* Image du produit */}
                     <Image
@@ -154,7 +142,7 @@ const CurrentFavorite = () => {
                         </button>
                       </Link>
                     </div>
-                  </motion.div>
+                  </div>
                 );
               })}
             </div>
