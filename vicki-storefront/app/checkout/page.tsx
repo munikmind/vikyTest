@@ -313,6 +313,7 @@ export default function CheckoutPage() {
             <ArrowLeft className="w-5 h-5" />
           </Button>
         </Link>
+        
         <h1 className="text-2xl font-bold">Finalisation de la commande</h1>
       </div>
 
