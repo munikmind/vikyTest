@@ -314,7 +314,6 @@ export default function CheckoutPage() {
           </Button>
         </Link>
 
-        
         <h1 className="text-2xl font-bold">Finalisation de la commande</h1>
       </div>
 
