@@ -8,6 +8,7 @@ import { ProductCard } from "@/components/ProductCard";
 import ShopCard from "@/components/ShopCard";
 import { useState } from "react";
 
+
 export default function Home() {
   const [isCartOpen, setIsCartOpen] = useState(false);
 
