@@ -1,9 +1,10 @@
 "use client";
-import { HttpTypes } from "@medusajs/types"
+import { HttpTypes } from "@medusajs/types";
+import { motion, useInView } from "framer-motion";
 import { Poppins } from "next/font/google";
 import Image from "next/image";
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { getProductsByCollection } from "../lib/products";
 
 const poppins = Poppins({
@@ -17,7 +18,8 @@ const CurrentFavorite = () => {
     HttpTypes.StoreProduct[]
   >([]);
   const [isLoading, setIsLoading] = useState(true);
-
+  const ref = useRef(null);
+  const inView = useInView(ref, { once: true });
   useEffect(() => {
     const fetchProducts = async () => {
       try {
@@ -67,10 +69,17 @@ const CurrentFavorite = () => {
         <div className="flex flex-col md:flex-row md:items-end gap-6">
           {/* Première carte (plus grande) */}
           {favoriteProducts.length > 0 && (
-            <div className="md:w-1/3 mb-6 md:mb-0">
+            <motion.div
+              className="md:w-1/3 mb-6 md:mb-0"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5 }}
+            >
               <div className="relative rounded-xl overflow-hidden h-[500px] md:h-[600px]">
                 <Image
-                  src={favoriteProducts[0].images?.[0]?.url || "/placeholder.jpg"}
+                  src={
+                    favoriteProducts[0].images?.[0]?.url || "/placeholder.jpg"
+                  }
                   alt={favoriteProducts[0].title}
                   fill
                   className="object-cover"
@@ -98,47 +107,56 @@ const CurrentFavorite = () => {
                   </Link>
                 </div>
               </div>
-            </div>
+            </motion.div>
           )}
 
           {/* Autres cartes (plus petites, en grille) */}
           <div className="md:w-2/3">
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 h-full">
-              {favoriteProducts.slice(1, 4).map((product) => (
-                <div
-                  key={product.id}
-                  className="relative rounded-xl overflow-hidden h-[300px] md:h-[290px]"
-                >
-                  {/* Image du produit */}
-                  <Image
-                    src={product.images?.[0]?.url || "/placeholder.jpg"}
-                    alt={product.title}
-                    fill
-                    className="object-cover"
-                  />
+              {favoriteProducts.slice(1, 4).map((product, index) => {
+                
+                
 
-                  {/* Overlay avec nom du produit */}
-                  <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/60 to-transparent pt-12 pb-4 px-4">
-                    <h3 className="text-white text-xl font-semibold">
-                      {product.title}
-                    </h3>
-                  </div>
+                return (
+                  <motion.div
+                    key={product.id}
+                    ref={ref}
+                    className="relative rounded-xl overflow-hidden h-[300px] md:h-[290px]"
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={inView ? { opacity: 1, y: 0 } : {}}
+                    transition={{ duration: 0.5 }}
+                  >
+                    {/* Image du produit */}
+                    <Image
+                      src={product.images?.[0]?.url || "/placeholder.jpg"}
+                      alt={product.title}
+                      fill
+                      className="object-cover"
+                    />
 
-                  {/* Boutons d'action */}
-                  <div className="absolute bottom-4 right-4">
-                    <Link href={`/products/${product.handle}`}>
-                      <button className="bg-white rounded-full p-2 hover:bg-gray-100 transition-colors">
-                        <Image
-                          src="/shopping-cart 2.svg"
-                          alt="Ajouter au panier"
-                          width={24}
-                          height={24}
-                        />
-                      </button>
-                    </Link>
-                  </div>
-                </div>
-              ))}
+                    {/* Overlay avec nom du produit */}
+                    <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/60 to-transparent pt-12 pb-4 px-4">
+                      <h3 className="text-white text-xl font-semibold">
+                        {product.title}
+                      </h3>
+                    </div>
+
+                    {/* Boutons d'action */}
+                    <div className="absolute bottom-4 right-4">
+                      <Link href={`/products/${product.handle}`}>
+                        <button className="bg-white rounded-full p-2 hover:bg-gray-100 transition-colors">
+                          <Image
+                            src="/shopping-cart 2.svg"
+                            alt="Ajouter au panier"
+                            width={24}
+                            height={24}
+                          />
+                        </button>
+                      </Link>
+                    </div>
+                  </motion.div>
+                );
+              })}
             </div>
           </div>
         </div>

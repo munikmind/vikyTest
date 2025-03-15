@@ -1,6 +1,8 @@
 "use client";
+import { motion, useInView } from "framer-motion";
 import { Poppins } from "next/font/google";
 import Image from "next/image";
+import { useRef } from "react";
 
 const poppins = Poppins({
   subsets: ["latin"],
@@ -9,6 +11,9 @@ const poppins = Poppins({
 });
 
 const AboutUs = () => {
+  const ref = useRef(null);
+  const inView = useInView(ref, { once: true });
+
   return (
     <div className="w-full bg-gray-100 py-8 sm:py-12 md:py-16 px-4">
       <div className="container mx-auto">
@@ -16,7 +21,10 @@ const AboutUs = () => {
         <div className="text-center mb-8 sm:mb-12 md:mb-16">
           <h1 className={`${poppins.className} text-3xl sm:text-4xl md:text-5xl font-medium mb-4 sm:mb-6`}>
             Pourquoi choisir{" "}
-            <span className={`${poppins.className} text-[#D12E87]`}>VikiCollection</span> ?
+            <span className={`${poppins.className} text-[#D12E87]`}>
+              VikiCollection
+            </span>{" "}
+            ?
           </h1>
         </div>
 
