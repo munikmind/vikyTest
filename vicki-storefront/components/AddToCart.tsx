@@ -23,7 +23,7 @@ const AddToCart = ({ product, onAddToCart }: AddToCartProps) => {
 
   const { mutate: addToCart, isPending } = useMutation({
     mutationFn: async () => {
-      console.log('product', product)
+      console.log("product", product);
       // console.log("Utilisation du panier existant:", cartId);
       // Si nous avons un cartId, ajouter l'article au panier existant
       await addItem(product.variantId || product.id, 1);
@@ -65,12 +65,11 @@ const AddToCart = ({ product, onAddToCart }: AddToCartProps) => {
       ) : (
         <div className="flex items-center gap-2">
           <ShoppingBag className="w-4 h-4" />
-          { product.categorie === "coiffure" ? (
+          {product.categorie === "coiffure" ? (
             <span>Reserver votre coiffure</span>
           ) : (
             <span>Ajouter au panier</span>
-          )
-          }
+          )}
         </div>
       )}
     </Button>

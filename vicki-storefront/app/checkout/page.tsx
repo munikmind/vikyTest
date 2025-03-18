@@ -121,7 +121,7 @@ export default function CheckoutPage() {
 
   const calculateTotal = () => {
     return items?.reduce((total, item) => {
-      return total + (item.unit_price * item.quantity);
+      return total + item.unit_price * item.quantity;
     }, 0);
   };
 
@@ -227,7 +227,6 @@ export default function CheckoutPage() {
             provider_id: "pp_system_default",
             data: {},
           });
-         
 
           // Complete the cart
           await sdk.store.cart.complete(currentCartId).then((data) => {
@@ -244,8 +243,7 @@ export default function CheckoutPage() {
               setOrder(data.order);
               setCurrentStep("complete");
             }
-          })
-          
+          });
         } catch (error: any) {
           console.error("Erreur lors du processus de paiement:", error);
           toast.error(
@@ -304,7 +302,6 @@ export default function CheckoutPage() {
     );
   }
 
-  
   return (
     <div className="container mx-auto py-10">
       <div className="flex items-center mb-6">
@@ -657,10 +654,8 @@ export default function CheckoutPage() {
             <div className="flex justify-between font-bold text-lg pt-2 border-t">
               <span>Total</span>
               <span>
-                {(
-                  calculateTotal() +
-                  (watch("shippingMethod") === "express" ? 10 : 0)
-                )}{" "}
+                {calculateTotal() +
+                  (watch("shippingMethod") === "express" ? 10 : 0)}{" "}
                 FCFA
               </span>
             </div>

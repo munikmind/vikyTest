@@ -5,6 +5,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { useState } from "react";
 import AddToCart from "./AddToCart";
+import BookingButton from "./BookingButton";
 
 const poppins = Poppins({
   subsets: ["latin"],
@@ -61,22 +62,27 @@ export const ProductCard = ({
           />
         </div>
       </Link>
-
-      {/* Add to Cart Button - Appears on Hover */}
-      <div
-        className={`absolute bottom-20 left-0 right-0 px-4 transition-opacity duration-300 ${
-          showAddToCart ? "opacity-100" : "opacity-0"
-        }`}
-      >
-        <AddToCart product={product} onAddToCart={onOpenCart} />
-      </div>
-
+      {categorie === "coiffure" ? (
+        <div
+          className={`absolute bottom-20 left-0 right-0 px-4 transition-opacity duration-300 ${
+            showAddToCart ? "opacity-100" : "opacity-0"
+          }`}
+        >
+          <BookingButton productName={productName} price={price} />
+        </div>
+      ) : (
+        <div
+          className={`absolute bottom-20 left-0 right-0 px-4 transition-opacity duration-300 ${
+            showAddToCart ? "opacity-100" : "opacity-0"
+          }`}
+        >
+          <AddToCart product={product} onAddToCart={onOpenCart} />
+        </div>
+      )}
       {/* Product Info */}
       <div className="mt-4 space-y-1">
         <Link href={`/products/${handle}`}>
-          <h3
-            className={`${poppins.className} text-lg font-medium text-black`}
-          >
+          <h3 className={`${poppins.className} text-lg font-medium text-black`}>
             {productName}
           </h3>
           <p className={`${poppins.className} text-base font-normal`}>

@@ -1,6 +1,7 @@
 "use client";
 
 import AddToCart from "@/components/AddToCart";
+import BookingButton from "@/components/BookingButton";
 import ShopCard from "@/components/ShopCard";
 import { getProductByHandle } from "@/lib/products";
 import { HttpTypes } from "@medusajs/types";
@@ -34,7 +35,7 @@ export default function ProductInfo({
       try {
         const productData = await getProductByHandle(resolvedParams.id);
         setProduct(productData);
-        console.log('productData :', productData)
+        console.log("productData :", productData);
       } catch (err) {
         console.error("Error loading product:", err);
         setError("Une erreur est survenue lors du chargement du produit");
@@ -163,10 +164,14 @@ export default function ProductInfo({
               </div>
             </div>
 
-            {/* Add to Cart Button */}
-
-            <AddToCart product={productToAddCart} onAddToCart={() => setIsCartOpen(true)} />
-
+            {product?.categories?.[0].name === "coiffure" ? (
+              <BookingButton productName={product?.title} price={getProductPrice(product)} />
+            ) : (
+              <AddToCart
+                product={productToAddCart}
+                onAddToCart={() => setIsCartOpen(true)}
+              />
+            )}
             {/* Accordion Sections */}
             <div className="border-t pt-4">
               <div className="flex justify-between items-center py-3 cursor-pointer">
@@ -208,7 +213,7 @@ export default function ProductInfo({
           </div>
         </div>
       )}
-    <ShopCard isOpen={isCartOpen} onClose={() => setIsCartOpen(false)} />
+      <ShopCard isOpen={isCartOpen} onClose={() => setIsCartOpen(false)} />
     </div>
   );
 }
