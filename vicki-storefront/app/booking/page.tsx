@@ -4,12 +4,17 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useSearchParams } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 export default function BookingPage() {
   const searchParams = useSearchParams();
-  const service = searchParams.get("service");
-  const price = searchParams.get("price");
+  const [service, setService] = useState<string | null>(null);
+  const [price, setPrice] = useState<string | null>(null);
+
+  useEffect(() => {
+    setService(searchParams.get("service"));
+    setPrice(searchParams.get("price"));
+  }, [searchParams]);
 
   const [formData, setFormData] = useState({
     name: "",
@@ -21,6 +26,8 @@ export default function BookingPage() {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+
+    if (!service || !price) return;
 
     // Construire le message WhatsApp
     const message = `
@@ -40,6 +47,10 @@ export default function BookingPage() {
     )}`;
     window.open(whatsappUrl, "_blank");
   };
+
+  if (!service || !price) {
+    return <p className="text-center py-10">Chargement...</p>;
+  }
 
   return (
     <div className="container mx-auto py-10">
