@@ -7,13 +7,15 @@ import { useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
 
 export default function BookingPage() {
-  const searchParams = useSearchParams();
+  const searchParams = typeof window !== "undefined" ? useSearchParams() : null;
   const [service, setService] = useState<string | null>(null);
   const [price, setPrice] = useState<string | null>(null);
 
   useEffect(() => {
-    setService(searchParams.get("service"));
-    setPrice(searchParams.get("price"));
+    if (searchParams) {
+      setService(searchParams.get("service"));
+      setPrice(searchParams.get("price"));
+    }
   }, [searchParams]);
 
   const [formData, setFormData] = useState({
@@ -29,7 +31,6 @@ export default function BookingPage() {
 
     if (!service || !price) return;
 
-    // Construire le message WhatsApp
     const message = `
       *Nouvelle Réservation*
       Service: ${service}
@@ -41,7 +42,6 @@ export default function BookingPage() {
       Notes: ${formData.notes}
     `.trim();
 
-    // Rediriger vers WhatsApp
     const whatsappUrl = `https://wa.me/+221765769486?text=${encodeURIComponent(
       message
     )}`;
